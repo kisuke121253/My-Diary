@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_extra %}
+{{ block.super }}
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="{% static 'css/relatorio/relatorios.css' %}" media="screen" />
+<title>lista Acompanhamento Semanal</title>
+{% endblock %}
+
+
+{% block content %}
+{% if can_generate_report %}
+<a href="{% url 'acompanhamento_semanal_view' %}" class="btn btn-primary">Gerar Relatório</a>
+{% else %}
+<button class="btn btn-primary" disabled>Gerar Relatório (Disponível em {{ days_until_next_report }} dias)</button>
+{% endif %}
+<div class="card-container">
+    {% for acompanhamento in acompanhamentos %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ acompanhamento.nome }}</h5>
+            <p class="card-text">
+                Data: {{ acompanhamento.data }}<br>
+                Número da Sessão: {{ acompanhamento.numero_sessao }}
+            </p>
+            <a href="#" class="btn btn-primary">Ver Detalhes</a>
+            <a href="{% url 'delete_acompanhamento' acompanhamento.id %}" class="btn btn-danger"
+                onclick="return confirm('Tem certeza que deseja deletar este acompanhamento?');">Deletar</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+
+
+{% block scripts %}
+
+{% endblock %}

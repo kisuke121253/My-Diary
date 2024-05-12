@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_extra %}
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="{% static 'css/calendario/calendario.css' %}" media="screen" />
+<title>Acompanhamento Semanal</title>
+<style>
+    .output-div {
+        min-height: 100px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-top: 10px;
+        background-color: #f9f9f9;
+        white-space: pre-wrap;
+        /* Mantém a formatação de espaços e quebras de linha */
+        overflow-y: auto;
+        /* Adiciona rolagem vertical se o conteúdo for muito extenso */
+        font-family: Arial, sans-serif;
+        font-size: 0.9rem;
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Formulário de Acompanhamento Semanal</h1>
+<canvas id="moodChart" width="400" height="400"></canvas>
+<form method="post" action="{% url 'acompanhamento_semanal' %}" id="form-acompanhamento">
+    {% csrf_token %}
+    <p>
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" value="{{ nome }}" readonly>
+    </p>
+    <p>
+        <label for="data">Data:</label>
+        <input type="date" id="data" name="data" value="{{ data }}" readonly>
+    </p>
+    <p>
+        <label for="numero_sessao">Número da Sessão:</label>
+        <input type="number" id="numero_sessao" name="numero_sessao" value="{{ numero_sessao }}" readonly>
+    </p>
+    <p>
+        <label for="sintomas">Sintomas:</label>
+        <textarea id="sintomas" name="sintomas"></textarea>
+    </p>
+    <p>
+        <label for="estrategias_coping">Estratégias de Coping:</label>
+        <textarea id="estrategias_coping" name="estrategias_coping"></textarea>
+    </p>
+    <p>
+        <label for="observacoes_terapeuta">Observações do Terapeuta:</label>
+        <textarea id="observacoes_terapeuta" name="observacoes_terapeuta"></textarea>
+    </p>
+    <p>
+        <label for="objetivos_proxima_semana">Objetivos para a Próxima Semana:</label>
+        <textarea id="objetivos_proxima_semana" name="objetivos_proxima_semana"></textarea>
+    </p>
+
+    <input type="hidden" id="id_avaliacao_humor" name="avaliacao_humor">
+    <input type="hidden" id="id_mudancas_humor" name="mudancas_humor">
+    <input type="hidden" id="id_eventos_semana" name="eventos_semana">
+
+    <div id="avaliacao-humor" class="output-div"></div>
+    <div id="mudancas-humor" class="output-div"></div>
+    <div id="eventos-semana" class="output-div"></div>
+
+    <button type="submit">Enviar</button>
+</form>
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var moodData = {{ mood_data| safe }};
+    var moods = ["feliz", "triste", "irritado", "ansioso", "entusiasmado", "cansado", "estressado", "indiferente", "esperancoso", "inspirado"];
+    var dataValues = moods.map(mood => moodData[mood] || 0);
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        gerarRelatorioCompleto();
+    });
+
+    // document.getElementById('id_avaliacao_humor').value = data.result;  // Para avaliação de humor
+    // document.getElementById('id_mudancas_humor').value = data.mudancas_humor;  // Para mudanças de humor
+    // document.getElementById('id_eventos_semana').value = data.analise_ia;  // Para eventos da semana
+
+
+    async function gerarRelatorioCompleto() {
+        try {
+            // Chama a função analisarMudancaHumor e espera a sua conclusão
+            await analisarMudancaHumor();
+            // Aguarda 2 segundos antes de chamar a próxima função
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Chama a função analisarSentimento e espera a sua conclusão
+            await analisarSentimento();
+            // Aguarda 2 segundos antes de chamar a próxima função
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Chama a função consultarIAeEventos e espera a sua conclusão
+            await consultarIAeEventos();
+
+            alert('Relatório completo gerado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao gerar relatório completo:', error);
+            alert('Erro ao gerar relatório completo. Verifique o console para mais detalhes.');
+        }
+    }
+
+    function formatarTextoIA(texto) {
+        let textoLimpo = texto.replace(/[\\*]+/g, ''); // Remove asteriscos
+        textoLimpo = textoLimpo.trim(); // Remove espaços extras do início e fim
+
+        // Substitui dois ou mais novas linhas por um parágrafo
+        textoLimpo = textoLimpo.replace(/\n{2,}/g, '</p><p>');
+
+        // Envolva o resultado em parágrafos
+        textoLimpo = `<p>${textoLimpo}</p>`;
+
+        // Substitui qualquer nova linha única por uma quebra de linha
+        textoLimpo = textoLimpo.replace(/\n/g, '<br>');
+
+        return textoLimpo;
+    }
+
+
+    function analisarSentimento() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const avaliacaoHumor = document.querySelector('#id_avaliacao_humor').value; // Supondo que você ainda colete isso de algum lugar.
+        return fetch("{% url 'analyze_sentiment' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ avaliacao_humor: avaliacaoHumor })
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('avaliacao-humor').innerHTML = formatarTextoIA(data.result);
+                document.getElementById('id_avaliacao_humor').value = data.result; // Atualiza o valor do campo oculto
+            });
+    }
+
+    function analisarMudancaHumor() {
+        const url = "{% url 'analyze_mood_change' %}";
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.mudancas_humor) {
+                    document.getElementById('mudancas-humor').innerHTML = formatarTextoIA(data.mudancas_humor);
+                    document.getElementById('id_mudancas_humor').value = data.mudancas_humor; // Atualiza o valor do campo oculto
+                } else {
+                    alert('Erro ao analisar mudança de humor: ' + data.error);
+                }
+            });
+    }
+
+    function consultarIAeEventos() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        return fetch("{% url 'consultar_eventos' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ moods: moodData })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('eventos-semana').innerHTML = formatarTextoIA(data.analise_ia);
+                    document.getElementById('id_eventos_semana').value = data.analise_ia; // Atualiza o valor do campo oculto
+                } else {
+                    alert('Erro ao buscar eventos: ' + data.error);
+                }
+            });
+    }
+
+
+
+
+
+
+    var ctx = document.getElementById('moodChart').getContext('2d');
+    var moodChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ["Feliz", "Triste", "Irritado", "Ansioso", "Entusiasmado", "Cansado", "Estressado", "Indiferente", "Esperançoso", "Inspirado"],
+            datasets: [{
+                label: 'Mood da semana',
+                data: dataValues,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)',
+                    'rgba(199, 199, 199, 0.2)',
+                    'rgba(83, 102, 255, 0.2)',
+                    'rgba(40, 159, 64, 0.2)',
+                    'rgba(255, 99, 255, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(199, 199, 199, 1)',
+                    'rgba(83, 102, 255, 1)',
+                    'rgba(40, 159, 64, 1)',
+                    'rgba(255, 99, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    // });
+</script>
+{% endblock %}

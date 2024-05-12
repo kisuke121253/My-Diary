@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_extra %}
+{{ block.super }}
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="{% static 'css/calendario/calendario.css' %}" media="screen" />
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js' defer></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/locales/pt-br.js' defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Calendário de Eventos</h2>
+    <div id="calendario"></div>
+</div>
+
+<!-- Modal para informações do Evento -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Detalhes do Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="eventTitle"></p>
+                <p id="eventStart"></p>
+                <p id="eventEnd"></p>
+                <div id="notesContainer">
+                    <!-- As anotações serão carregadas aqui -->
+                </div>
+                <form id="noteForm">
+                    <textarea id="noteText" class="form-control" placeholder="Escreva uma anotação..."
+                        rows="3"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Salvar Anotação</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.0/main.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.0/locales/pt-br.js'></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('FullCalendar', typeof FullCalendar);
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        var calendarEl = document.getElementById('calendario');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'pt-br',
+            timeZone: 'America/Sao_Paulo',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: function (fetchInfo, successCallback, failureCallback) {
+                fetch('/get_events/')
+                    .then(response => response.json())
+                    .then(data => {
+                        var eventos = data.eventos; // Assumindo que já estão no formato correto
+                        successCallback(eventos.map(function (event) {
+                            return {
+                                id: event.id,
+                                title: event.title,
+                                start: event.start,
+                                end: event.end,
+                                notas: event.notas,
+                            };
+                        }));
+                    })
+                    .catch(error => console.error('Error loading events:', error));
+            },
+            eventClick: function (info) {
+                console.log(info.event)
+                document.getElementById('eventTitle').textContent = info.event.title;
+                document.getElementById('eventStart').textContent = 'Início: ' + new Date(info.event.start).toLocaleString();
+                document.getElementById('eventEnd').textContent = 'Fim: ' + new Date(info.event.end).toLocaleString();
+
+                // Limpar e carregar notas existentes
+                var notesContainer = document.getElementById('notesContainer');
+                notesContainer.innerHTML = '';
+                if (info.event.extendedProps.notas && info.event.extendedProps.notas.length > 0) {
+                    info.event.extendedProps.notas.forEach(nota => {
+                        var noteDiv = document.createElement("div");
+                        var para = document.createElement("p");
+                        para.textContent = nota.texto;
+                        noteDiv.appendChild(para);
+
+                        var deleteBtn = document.createElement("button");
+                        deleteBtn.textContent = "Delete";
+                        deleteBtn.className = "btn btn-danger btn-sm";
+                        deleteBtn.onclick = function () {
+                            fetch(`/delete_note/${nota.id}/`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrftoken
+                                }
+                            }).then(response => response.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        notesContainer.removeChild(noteDiv);
+                                    } else {
+                                        alert('Failed to delete note');
+                                    }
+                                })
+                                .catch(error => console.error('Error deleting note:', error));
+                        };
+                        noteDiv.appendChild(deleteBtn);
+                        notesContainer.appendChild(noteDiv);
+                    });
+                } else {
+                    var para = document.createElement("p");
+                    para.textContent = "Nenhuma nota disponível para este evento.";
+                    notesContainer.appendChild(para);
+                }
+
+                // Configurar o formulário para enviar nova nota
+                var noteForm = document.getElementById('noteForm');
+                noteForm.onsubmit = function (event) {
+                    event.preventDefault();
+                    var noteText = document.getElementById('noteText').value;
+                    console.log(info.event.id)
+
+                    fetch(`/add_note/${info.event.id}/`, {
+                        method: 'POST',
+                        body: JSON.stringify({ texto: noteText }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken  // Adicione o token CSRF aqui
+                        }
+                    }).then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // Adicionar a nova nota ao modal
+                                var noteDiv = document.createElement("div");
+                                var para = document.createElement("p");
+                                para.textContent = noteText;
+                                noteDiv.appendChild(para);
+                                notesContainer.appendChild(noteDiv);
+                                noteForm.reset();
+                            } else {
+                                alert('Erro ao adicionar nota');
+                            }
+                        }).catch(error => console.error('Erro:', error));
+                };
+
+                var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                eventModal.show();
+            }
+        });
+
+        calendar.render();
+    });
+
+</script>
+{% endblock %}

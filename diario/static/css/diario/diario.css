@@ -1,0 +1,362 @@
+#diaryNameForm {
+  display: flex;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.diaryCapa2 {
+  display: flex;
+  background-image: linear-gradient(45deg, #127ab5, #0f99b7, #50c0ff);
+  height: 95vh;
+  border-radius: 8px;
+  width: 44%;
+  box-shadow: 0px 0px 12px 0px rgba(0, 0, 0, 0.75);
+}
+
+.diaryCapa1 {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  height: 95vh;
+  border-radius: 8px;
+  width: 98%;
+  box-shadow: 1px 0px 4px -1px rgba(0, 0, 0, 0.75);
+}
+
+.diaryCapa {
+  display: flex;
+  flex-direction: column;
+  background-image: linear-gradient(45deg, #127ab5, #0f99b7, #50c0ff);
+  height: 95vh;
+  border-radius: 8px;
+  width: 98%;
+  box-shadow: 2px 1px 4px 0px rgba(0, 0, 0, 0.75);
+  align-items: center;
+  justify-content: space-evenly;
+}
+.diaryLabel {
+  font-size: 50px;
+  padding: 1rem;
+  font-weight: bold;
+  display: flex;
+  text-align: center;
+  color: white;
+}
+
+.diaryButton {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 50%;
+}
+
+.diaryButton input {
+  border: 0;
+  border-bottom: 2px solid black;
+  background-color: transparent;
+}
+
+.diaryButton button {
+  background-color: #127ab5;
+  border: 0;
+  font-weight: bold;
+  color: white;
+  border-radius: 8px;
+  padding: 10px;
+  transition: background-color 0.3s ease, transform 0.3s ease; /* Transições suaves para cor de fundo e transformação */
+  transform: scale(1);
+}
+
+.diaryButton button:hover {
+  background-color: #127ab5;
+  border: 0;
+  font-weight: bold;
+  color: white;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #004494; /* Cor de fundo no hover */
+  transform: scale(1.05);
+}
+
+.diaryEdit {
+  width: 25%;
+  display: flex;
+  font-weight: bold;
+  background-color: rgb(255, 255, 255);
+  gap: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 1px 5px -2px rgba(0, 0, 0, 0.75);
+  text-wrap: nowrap;
+  margin: 1rem;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.edit-btn {
+  border: none;
+  border-radius: 8px;
+  background-color: #127ab5;
+  transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out; /* Suaviza a transição de sombra e transformação */
+  cursor: pointer; /* Muda o cursor para indicar que é clicável */
+}
+
+.edit-btn:hover {
+  color: white;
+  background-color: #0e5a8a; /* Escurece a cor de fundo */
+  transform: scale(1.05); /* Aumenta ligeiramente o tamanho do botão */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Adiciona sombra para efeito de flutuação */ /* Adiciona sombra para efeito de flutuação */
+}
+
+.dailyContainer {
+  width: 67%;
+  position: absolute;
+  display: flex;
+  font-weight: bold;
+  background-color: rgb(255, 255, 255);
+  border-radius: 8px;
+  box-shadow: 0px 1px 5px -2px rgba(0, 0, 0, 0.75);
+  align-items: center;
+  padding: 12px;
+  justify-content: space-around;
+  /* left: 0; */
+  top: 13%;
+  right: 2%;
+}
+#searchInput {
+  padding: 6px;
+  border: 1px solid #959595;
+  border-radius: 8px;
+}
+
+.dailyContainer h4 {
+  margin: 0;
+  font-weight: bold;
+}
+
+.btn-search {
+  border-radius: 8px;
+  border: 0;
+  background-color: #127ab5;
+  padding: 7px 12px;
+  transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out; /* Suaviza a transição de cor, transformação e sombra */
+  cursor: pointer; /* Muda o cursor para indicar que é clicável */
+}
+
+.btn-search:hover {
+  color: white;
+  background-color: #0e5a8a; /* Escurece a cor de fundo */
+  transform: scale(1.05);
+}
+
+.book_style_capa {
+  background-image: linear-gradient(45deg, #127ab5, #0f99b7, #50c0ff);
+  box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  padding: 1rem 1rem;
+  border-radius: 8px;
+}
+
+.book_style_pg1 {
+  background-color: #ffffff;
+  box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  padding: 2px 1rem;
+}
+
+.book_style {
+  width: 100%;
+  padding: 0rem 2rem 1rem 2rem;
+}
+
+.book_style_pg2 {
+  background-color: #ffffff;
+  box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  padding: 2px 1rem;
+}
+
+.book_style_pg3 {
+  background-color: #ffffff;
+  box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  padding: 2px 1rem;
+}
+
+.nav-button {
+  position: absolute;
+  bottom: -5%;
+  background-color: #64b5f6;
+  padding: 1rem 1.3rem;
+  border-radius: 30px;
+  border: none;
+  transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out; /* Adiciona transição para transformação, cor de fundo e sombra */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Sombra inicial */
+}
+
+.nav-button:hover {
+  color: white;
+  transform: translateY(-10px); /* Move o botão para cima ao passar o mouse */
+  background-color: rgba(76, 145, 206, 0.8); /* Escurece a cor de fundo */
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5); /* Sombra mais acentuada para o efeito de flutuação */
+}
+
+#book {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  /* max-width: 1000px; */
+  /* margin: 0 auto; */
+  border: 1px solid #ccc;
+  position: relative;
+}
+
+.page {
+  width: 50%;
+  height: 80vh;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  border-right: 1px solid #ddd;
+}
+
+.page:last-child {
+  border-right: none;
+}
+
+textarea {
+  resize: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 0px 0px 4px 3px rgba(0, 0, 0, 0.4);
+  border: none;
+}
+
+.prev {
+  left: 90px;
+}
+
+.next {
+  right: 90px;
+}
+
+.icon-button .button-text {
+  display: inline-flex; /* Usar inline-block para controlar largura */
+  max-width: 0; /* Começa com max-width a 0 para esconder o texto */
+  overflow: hidden; /* Esconde qualquer parte do texto que exceda o max-width */
+  white-space: nowrap; /* Evita que o texto quebre em mais de uma linha */
+  opacity: 0; /* Começa com o texto transparente */
+  transition: max-width 0.3s ease-in-out, opacity 0.3s ease-in-out; /* Suaviza a transição de max-width e opacity */
+}
+
+.icon-button:hover .button-text {
+  max-width: 200px; /* Aumenta o max-width para permitir que o texto seja mostrado */
+  opacity: 1; /* Torna o texto totalmente visível */
+}
+
+.section-icons-button {
+  display: flex;
+  align-items: center;
+  margin-left: 3rem;
+  justify-content: space-between;
+}
+
+#respostaProblema ul {
+  list-style-type: none; /* Remove marcadores padrão */
+  padding-left: 0; /* Remove padding à esquerda */
+}
+
+#respostaProblema li {
+  margin-bottom: 10px; /* Espaço entre itens */
+}
+
+#respostaProblema {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.btn-icon {
+  color: white;
+  background-color: #127ab5;
+  border: none;
+  padding: 8px 13px;
+  border-radius: 8px;
+}
+
+.btn-icon1 {
+  color: white;
+  background-color: #50c0ff;
+  border: none;
+  padding: 8px 13px;
+  border-radius: 8px;
+}
+
+.btn-icon2 {
+  color: white;
+  background-color: #0f99b7;
+  border: none;
+  padding: 8px 13px;
+  border-radius: 8px;
+}
+
+.btn-icon3 {
+  color: white;
+  background-color: #127ab5;
+  border: none;
+  padding: 8px 13px;
+  border-radius: 8px;
+}
+
+.btn-icon4 {
+  color: white;
+  background-color: #1aadcd;
+  border: none;
+  padding: 8px 13px;
+  border-radius: 8px;
+}
+
+/************************** responsividade*************************** */
+
+@media (max-width: 1200px) {
+  .diaryCapa2 {
+    width: 60%; /* Aumenta a largura para telas menores */
+  }
+}
+
+/* Media query para telas com largura máxima de 992px */
+@media (max-width: 992px) {
+  .diaryCapa2 {
+    width: 75%; /* Aumenta ainda mais a largura para telas ainda menores */
+  }
+}
+
+/* Media query para telas com largura máxima de 768px */
+@media (max-width: 768px) {
+  .diaryCapa2 {
+    width: 85%; /* Aumenta a largura para adaptação em tablets e dispositivos móveis */
+  }
+}
+
+/* Media query para telas com largura máxima de 576px */
+@media (max-width: 576px) {
+  .diaryCapa2 {
+    width: 95%; /* Aumenta a largura para otimização em smartphones */
+  }
+  .diaryLabel {
+    font-size: 40px;
+  }
+}

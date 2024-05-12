@@ -1,0 +1,117 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #f1f1f1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+h2 {
+  text-align: center;
+  font-family: "Poppins", sans-serif;
+}
+
+form {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-family: "Poppins", sans-serif;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+  /* Added this to include padding in input width */
+}
+
+button {
+  width: 100%;
+  background-color: #127ab5;
+  color: white;
+  padding: 10px;
+  border: none;
+  font-weight: bold;
+  border-radius: 8px !important;
+  transition: background-color 0.3s ease, transform 0.3s ease; /* Transições suaves para cor de fundo e transformação */
+  transform: scale(1); /* Escala inicial */
+}
+
+button:hover {
+  background-color: #004494; /* Cor de fundo no hover */
+  transform: scale(1.05); /* Aumenta o tamanho do botão em 10% */
+}
+
+a {
+  color: black !important;
+  text-decoration: none !important;
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+}
+
+.background_login {
+  background-image: url("../../media/login.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 85vh;
+  width: 50%;
+  border-radius: 0px 20px 20px 0px;
+}
+.login-section {
+  display: flex;
+  width: 100%;
+  margin: 7rem;
+  border: 1px solid black;
+  border-radius: 20px;
+}
+
+.login-container {
+  background: white;
+  padding: 20px;
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid black;
+  border-radius: 20px 0px 0px 20px;
+  justify-content: center;
+}
+
+/****************************** RESPONSIVADADE *************************************/
+
+@media (max-width: 720px) {
+  .background_login {
+    display: none;
+  }
+  .login-container {
+    width: 100%;
+    border-radius: 0px;
+    border: none;
+  }
+
+  .login-section {
+    border-radius: 0px;
+    margin: 0;
+    border: none;
+  }
+}

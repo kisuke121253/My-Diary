@@ -1,0 +1,28 @@
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px; /* Espaço entre os cards */
+}
+
+.card {
+  flex: 1 1 300px; /* Os cards irão se expandir mas não ultrapassarão 300px */
+  border: 1px solid #ccc;
+  border-radius: 8px; /* Bordas arredondadas para os cards */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave para os cards */
+}
+
+.card-body {
+  padding: 20px; /* Espaçamento interno para o conteúdo dentro dos cards */
+}
+
+.card-title {
+  margin-bottom: 10px; /* Espaço abaixo do título */
+}
+
+.card-text {
+  margin-bottom: 20px; /* Espaço abaixo do texto */
+}
+
+.btn {
+  margin-right: 10px; /* Espaço entre os botões */
+}
