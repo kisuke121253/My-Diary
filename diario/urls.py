@@ -18,7 +18,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib import admin
 from django.urls import path
 from django.urls import path 
-from . import views  # Certifique-se de importar sua view
+from . import views 
 
 
 urlpatterns = [
@@ -54,4 +54,8 @@ urlpatterns = [
     path('delete-acompanhamento/<int:id>/', views.delete_acompanhamento, name='delete_acompanhamento'),
     path('add_note/<int:event_id>/', views.add_note, name='add_note'),
     path('delete_note/<int:note_id>/', views.delete_note, name='delete_note'),
+    path('download_pdf/', views.download_pdf_view, name='download_pdf'),
+    path('download_word/', views.download_word_view, name='download_word'),
+    path('acompanhamentos/download/<int:acompanhamento_id>/', views.download_pdf_view, name='download_pdf_view'),
+    path('acompanhamento/<int:id>/', views.view_acompanhamento, name='view_acompanhamento'),
 ]

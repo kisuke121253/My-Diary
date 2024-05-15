@@ -65,7 +65,7 @@
   color: white;
   border-radius: 8px;
   padding: 10px;
-  transition: background-color 0.3s ease, transform 0.3s ease; /* Transições suaves para cor de fundo e transformação */
+  transition: background-color 0.3s ease, transform 0.3s ease;
   transform: scale(1);
 }
 
@@ -76,7 +76,7 @@
   color: white;
   border-radius: 8px;
   padding: 10px;
-  background-color: #004494; /* Cor de fundo no hover */
+  background-color: #004494;
   transform: scale(1.05);
 }
 
@@ -100,15 +100,15 @@
   border-radius: 8px;
   background-color: #127ab5;
   transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out,
-    box-shadow 0.3s ease-in-out; /* Suaviza a transição de sombra e transformação */
-  cursor: pointer; /* Muda o cursor para indicar que é clicável */
+    box-shadow 0.3s ease-in-out;
+  cursor: pointer;
 }
 
 .edit-btn:hover {
   color: white;
-  background-color: #0e5a8a; /* Escurece a cor de fundo */
-  transform: scale(1.05); /* Aumenta ligeiramente o tamanho do botão */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Adiciona sombra para efeito de flutuação */ /* Adiciona sombra para efeito de flutuação */
+  background-color: #0e5a8a;
+  transform: scale(1.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .dailyContainer {
@@ -143,13 +143,13 @@
   background-color: #127ab5;
   padding: 7px 12px;
   transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out,
-    box-shadow 0.3s ease-in-out; /* Suaviza a transição de cor, transformação e sombra */
-  cursor: pointer; /* Muda o cursor para indicar que é clicável */
+    box-shadow 0.3s ease-in-out;
+  cursor: pointer;
 }
 
 .btn-search:hover {
   color: white;
-  background-color: #0e5a8a; /* Escurece a cor de fundo */
+  background-color: #0e5a8a;
   transform: scale(1.05);
 }
 
@@ -199,15 +199,15 @@
   border-radius: 30px;
   border: none;
   transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out,
-    box-shadow 0.3s ease-in-out; /* Adiciona transição para transformação, cor de fundo e sombra */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Sombra inicial */
+    box-shadow 0.3s ease-in-out;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .nav-button:hover {
   color: white;
-  transform: translateY(-10px); /* Move o botão para cima ao passar o mouse */
-  background-color: rgba(76, 145, 206, 0.8); /* Escurece a cor de fundo */
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5); /* Sombra mais acentuada para o efeito de flutuação */
+  transform: translateY(-10px);
+  background-color: rgba(76, 145, 206, 0.8);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
 }
 
 #book {
@@ -255,17 +255,17 @@ textarea {
 }
 
 .icon-button .button-text {
-  display: inline-flex; /* Usar inline-block para controlar largura */
-  max-width: 0; /* Começa com max-width a 0 para esconder o texto */
-  overflow: hidden; /* Esconde qualquer parte do texto que exceda o max-width */
-  white-space: nowrap; /* Evita que o texto quebre em mais de uma linha */
-  opacity: 0; /* Começa com o texto transparente */
-  transition: max-width 0.3s ease-in-out, opacity 0.3s ease-in-out; /* Suaviza a transição de max-width e opacity */
+  display: inline-flex;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: max-width 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
 
 .icon-button:hover .button-text {
-  max-width: 200px; /* Aumenta o max-width para permitir que o texto seja mostrado */
-  opacity: 1; /* Torna o texto totalmente visível */
+  max-width: 200px;
+  opacity: 1;
 }
 
 .section-icons-button {
@@ -276,12 +276,12 @@ textarea {
 }
 
 #respostaProblema ul {
-  list-style-type: none; /* Remove marcadores padrão */
-  padding-left: 0; /* Remove padding à esquerda */
+  list-style-type: none;
+  padding-left: 0;
 }
 
 #respostaProblema li {
-  margin-bottom: 10px; /* Espaço entre itens */
+  margin-bottom: 10px;
 }
 
 #respostaProblema {
@@ -294,7 +294,7 @@ textarea {
   background-color: #127ab5;
   border: none;
   padding: 8px 13px;
-  border-radius: 8px;
+  border-radius: 8px 8px 0px 0px;
 }
 
 .btn-icon1 {
@@ -302,7 +302,7 @@ textarea {
   background-color: #50c0ff;
   border: none;
   padding: 8px 13px;
-  border-radius: 8px;
+  border-radius: 8px 8px 0px 0px;
 }
 
 .btn-icon2 {
@@ -310,7 +310,7 @@ textarea {
   background-color: #0f99b7;
   border: none;
   padding: 8px 13px;
-  border-radius: 8px;
+  border-radius: 8px 8px 0px 0px;
 }
 
 .btn-icon3 {
@@ -318,7 +318,7 @@ textarea {
   background-color: #127ab5;
   border: none;
   padding: 8px 13px;
-  border-radius: 8px;
+  border-radius: 8px 8px 0px 0px;
 }
 
 .btn-icon4 {
@@ -326,35 +326,57 @@ textarea {
   background-color: #1aadcd;
   border: none;
   padding: 8px 13px;
-  border-radius: 8px;
+  border-radius: 8px 8px 0px 0px;
+}
+
+.loading-spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  display: none;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
 }
 
 /************************** responsividade*************************** */
 
 @media (max-width: 1200px) {
   .diaryCapa2 {
-    width: 60%; /* Aumenta a largura para telas menores */
+    width: 60%;
   }
 }
 
-/* Media query para telas com largura máxima de 992px */
 @media (max-width: 992px) {
   .diaryCapa2 {
-    width: 75%; /* Aumenta ainda mais a largura para telas ainda menores */
+    width: 75%;
   }
 }
 
-/* Media query para telas com largura máxima de 768px */
 @media (max-width: 768px) {
   .diaryCapa2 {
-    width: 85%; /* Aumenta a largura para adaptação em tablets e dispositivos móveis */
+    width: 85%;
   }
 }
 
-/* Media query para telas com largura máxima de 576px */
 @media (max-width: 576px) {
   .diaryCapa2 {
-    width: 95%; /* Aumenta a largura para otimização em smartphones */
+    width: 95%;
   }
   .diaryLabel {
     font-size: 40px;

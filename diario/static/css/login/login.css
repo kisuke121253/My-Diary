@@ -36,7 +36,6 @@ form {
   border: 1px solid #ddd;
   border-radius: 8px;
   box-sizing: border-box;
-  /* Added this to include padding in input width */
 }
 
 button {
@@ -47,13 +46,13 @@ button {
   border: none;
   font-weight: bold;
   border-radius: 8px !important;
-  transition: background-color 0.3s ease, transform 0.3s ease; /* Transições suaves para cor de fundo e transformação */
-  transform: scale(1); /* Escala inicial */
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  transform: scale(1);
 }
 
 button:hover {
-  background-color: #004494; /* Cor de fundo no hover */
-  transform: scale(1.05); /* Aumenta o tamanho do botão em 10% */
+  background-color: #004494;
+  transform: scale(1.05);
 }
 
 a {

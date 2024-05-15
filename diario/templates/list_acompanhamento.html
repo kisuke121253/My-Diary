@@ -11,29 +11,53 @@
 
 
 {% block content %}
-{% if can_generate_report %}
-<a href="{% url 'acompanhamento_semanal_view' %}" class="btn btn-primary">Gerar Relatório</a>
-{% else %}
-<button class="btn btn-primary" disabled>Gerar Relatório (Disponível em {{ days_until_next_report }} dias)</button>
-{% endif %}
-<div class="card-container">
+<div class="header-container">
+    {% if can_generate_report %}
+    <a href="{% url 'acompanhamento_semanal_view' %}" class="btn-custom">Gerar Relatório</a>
+    {% else %}
+    <button class="btn btn-primary" disabled>Gerar Relatório (Disponível em {{ days_until_next_report }} dias)</button>
+    {% endif %}
+    <h4>Relatório Semanal</h4>
+
+    <div>
+        <form method="get" action="">
+            <label for="filter_date">Filtrar por data:</label>
+            <input type="date" id="filter_date" name="filter_date"
+                value="{{ request.GET.filter_date|default_if_none:'' }}">
+            <button type="submit" class="btn-filter">
+                <i class="fas fa-filter"></i>
+            </button>
+        </form>
+    </div>
+</div>
+<div class="card-container-custom">
     {% for acompanhamento in acompanhamentos %}
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">{{ acompanhamento.nome }}</h5>
-            <p class="card-text">
-                Data: {{ acompanhamento.data }}<br>
-                Número da Sessão: {{ acompanhamento.numero_sessao }}
-            </p>
-            <a href="#" class="btn btn-primary">Ver Detalhes</a>
-            <a href="{% url 'delete_acompanhamento' acompanhamento.id %}" class="btn btn-danger"
-                onclick="return confirm('Tem certeza que deseja deletar este acompanhamento?');">Deletar</a>
+    <div class="card-custom">
+        <div class="card-inner-custom">
+            <div class="card-front-custom">
+                <h5 class="card-title">Relatório</h5>
+                <p class="card-text">
+                    <span class="card-acompanhamento-number">{{ acompanhamento.numero_sessao }}</span>
+                    <br>
+                    <span>{{ acompanhamento.data|date:"d/m/Y" }}</span>
+                </p>
+            </div>
+            <div class="card-back-custom">
+                <h5 class="card-title">Detalhes</h5>
+                <div class="card-back-container">
+                    <a href="{% url 'download_pdf_view' acompanhamento.id %}" class="card-btn">Baixar PDF</a>
+                    <a href="{% url 'view_acompanhamento' acompanhamento.id %}" class="card-btn">Ver relatório</a>
+                    <a href="{% url 'delete_acompanhamento' acompanhamento.id %}" class="card-btn"
+                        onclick="return confirm('Tem certeza que deseja deletar este acompanhamento?');">Deletar</a>
+                </div>
+
+            </div>
         </div>
     </div>
     {% endfor %}
 </div>
-
 {% endblock %}
+
 
 
 

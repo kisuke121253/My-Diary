@@ -13,7 +13,6 @@
 }
 
 body .fc {
-  /* extra precedence to overcome jqui */
   font-size: 1em;
 }
 
@@ -1525,6 +1524,139 @@ a.fc-more:hover {
 }
 
 .fc-unthemed .fc-list-empty {
-  /* theme will provide own background */
   background-color: #eee;
+}
+
+.header-calendar {
+  display: flex;
+  justify-content: center;
+  margin: 2rem;
+}
+
+.header-calendar h2 {
+  font-weight: bold;
+  background-color: white;
+  padding: 10px 32px;
+  border-radius: 8px;
+  box-shadow: 0px 1px 5px -2px rgba(0, 0, 0, 0.75);
+}
+
+.body-calendar {
+  display: flex;
+}
+
+.container-calendar {
+  width: 75%;
+  background-color: white;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.75);
+}
+
+#calendario {
+  padding: 1rem;
+}
+
+div.fc-daygrid.fc-dayGridMonth-view.fc-view {
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.75);
+}
+
+.fc .fc-daygrid-day-top {
+  justify-content: center !important;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid #fff !important;
+}
+
+button.fc-next-button.fc-button.fc-button-primary {
+  background-color: transparent;
+  color: #1aadcd;
+  border: none;
+}
+
+button.fc-prev-button.fc-button.fc-button-primary {
+  background-color: transparent;
+  color: #1aadcd;
+  border: none;
+}
+
+h2#fc-dom-1.fc-toolbar-title {
+  font-weight: bold;
+  color: #127ab5;
+}
+
+button.fc-dayGridMonth-button.fc-button.fc-button-primary.fc-button-active {
+  visibility: hidden;
+}
+
+button.fc-timeGridWeek-button.fc-button.fc-button-primary {
+  visibility: hidden;
+}
+
+button.fc-timeGridDay-button.fc-button.fc-button-primary {
+  visibility: hidden;
+}
+
+td.fc-daygrid-day.fc-day.fc-day-mon.fc-day-today {
+  background-color: var(--fc-today-bg-color, rgb(0 0 0 / 15%));
+}
+
+.events-calendar ul {
+  list-style-type: none;
+  padding: 0;
+}
+.events-calendar li {
+  margin-bottom: 10px;
+  background: #64b5f6;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.events-calendar li:hover {
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px);
+}
+
+.events-calendar h3 {
+  font-weight: bold;
+}
+
+.events-calendar {
+  display: flex;
+  padding: 1rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.table-no-border {
+  border-collapse: collapse;
+}
+
+.table-no-border th,
+.table-no-border td {
+  border: none;
+  border-bottom: 1px solid #dee2e6;
+  padding: 8px;
+  text-align: left;
+}
+
+.table-no-border th {
+  background-color: #f8f9fa;
+}
+
+.table-no-border td {
+  background-color: #ffffff;
+}
+
+.btn-delete {
+  color: #dc3545;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  color: #bd2130;
 }

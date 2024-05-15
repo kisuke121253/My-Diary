@@ -12,35 +12,66 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2>Calendário de Eventos</h2>
-    <div id="calendario"></div>
+<div class="body-calendar">
+    <div class="container-calendar">
+        <div class="header-calendar">
+            <h2>Calendário de Eventos</h2>
+        </div>
+        <div id="calendario"></div>
+    </div>
+    <div class="events-calendar">
+        <h3>próximos Eventos</h3>
+        <ul>
+            {% for evento in proximos_eventos %}
+            <li>
+                <strong>{{ evento.titulo }}</strong> ({{ evento.data_inicio }} - {{ evento.data_fim }})
+            </li>
+            {% empty %}
+            <li>Nenhum evento futuro.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
 </div>
 
-<!-- Modal para informações do Evento -->
 <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="eventModalLabel">Detalhes do Evento</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="eventTitle"></p>
-                <p id="eventStart"></p>
-                <p id="eventEnd"></p>
-                <div id="notesContainer">
-                    <!-- As anotações serão carregadas aqui -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <p id="eventTitle"></p>
+                        <p id="eventStart"></p>
+                        <p id="eventEnd"></p>
+                        <form id="noteForm">
+                            <textarea id="noteText" class="form-control" placeholder="Escreva uma anotação..."
+                                rows="3"></textarea>
+                            <button type="submit" class="btn btn-primary mt-2">Salvar Anotação</button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-no-border">
+                            <thead>
+                                <tr>
+                                    <th>anotações</th>
+                                    <th>data/hora</th>
+                                    <th>excluir</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notesContainer">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <form id="noteForm">
-                    <textarea id="noteText" class="form-control" placeholder="Escreva uma anotação..."
-                        rows="3"></textarea>
-                    <button type="submit" class="btn btn-primary mt-2">Salvar Anotação</button>
-                </form>
             </div>
         </div>
     </div>
 </div>
+
 
 {% endblock %}
 
@@ -87,7 +118,7 @@
                 fetch('/get_events/')
                     .then(response => response.json())
                     .then(data => {
-                        var eventos = data.eventos; // Assumindo que já estão no formato correto
+                        var eventos = data.eventos;
                         successCallback(eventos.map(function (event) {
                             return {
                                 id: event.id,
@@ -101,24 +132,34 @@
                     .catch(error => console.error('Error loading events:', error));
             },
             eventClick: function (info) {
-                console.log(info.event)
-                document.getElementById('eventTitle').textContent = info.event.title;
-                document.getElementById('eventStart').textContent = 'Início: ' + new Date(info.event.start).toLocaleString();
-                document.getElementById('eventEnd').textContent = 'Fim: ' + new Date(info.event.end).toLocaleString();
+                console.log(info.event);
 
-                // Limpar e carregar notas existentes
+                var eventStart = new Date(info.event.start).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                var eventEnd = new Date(info.event.end).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+                document.getElementById('eventTitle').textContent = info.event.title;
+                document.getElementById('eventStart').textContent = 'Início: ' + eventStart;
+                document.getElementById('eventEnd').textContent = 'Fim: ' + eventEnd;
+
                 var notesContainer = document.getElementById('notesContainer');
                 notesContainer.innerHTML = '';
                 if (info.event.extendedProps.notas && info.event.extendedProps.notas.length > 0) {
                     info.event.extendedProps.notas.forEach(nota => {
-                        var noteDiv = document.createElement("div");
-                        var para = document.createElement("p");
-                        para.textContent = nota.texto;
-                        noteDiv.appendChild(para);
+                        var noteRow = document.createElement("tr");
 
+                        var noteTextCell = document.createElement("td");
+                        noteTextCell.textContent = nota.texto;
+                        noteRow.appendChild(noteTextCell);
+
+                        var noteDateCell = document.createElement("td");
+                        var noteDate = new Date(nota.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                        noteDateCell.textContent = noteDate;
+                        noteRow.appendChild(noteDateCell);
+
+                        var actionCell = document.createElement("td");
                         var deleteBtn = document.createElement("button");
-                        deleteBtn.textContent = "Delete";
-                        deleteBtn.className = "btn btn-danger btn-sm";
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.className = "btn-delete";
                         deleteBtn.onclick = function () {
                             fetch(`/delete_note/${nota.id}/`, {
                                 method: 'POST',
@@ -129,23 +170,27 @@
                             }).then(response => response.json())
                                 .then(data => {
                                     if (data.status === 'success') {
-                                        notesContainer.removeChild(noteDiv);
+                                        notesContainer.removeChild(noteRow);
                                     } else {
-                                        alert('Failed to delete note');
+                                        alert('Falha ao excluir a nota');
                                     }
                                 })
-                                .catch(error => console.error('Error deleting note:', error));
+                                .catch(error => console.error('Erro ao excluir a nota:', error));
                         };
-                        noteDiv.appendChild(deleteBtn);
-                        notesContainer.appendChild(noteDiv);
+                        actionCell.appendChild(deleteBtn);
+                        noteRow.appendChild(actionCell);
+
+                        notesContainer.appendChild(noteRow);
                     });
                 } else {
-                    var para = document.createElement("p");
-                    para.textContent = "Nenhuma nota disponível para este evento.";
-                    notesContainer.appendChild(para);
+                    var noteRow = document.createElement("tr");
+                    var noNotesCell = document.createElement("td");
+                    noNotesCell.colSpan = 3;
+                    noNotesCell.textContent = "Nenhuma nota disponível para este evento.";
+                    noteRow.appendChild(noNotesCell);
+                    notesContainer.appendChild(noteRow);
                 }
 
-                // Configurar o formulário para enviar nova nota
                 var noteForm = document.getElementById('noteForm');
                 noteForm.onsubmit = function (event) {
                     event.preventDefault();
@@ -157,17 +202,47 @@
                         body: JSON.stringify({ texto: noteText }),
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken  // Adicione o token CSRF aqui
+                            'X-CSRFToken': csrftoken
                         }
                     }).then(response => response.json())
                         .then(data => {
                             if (data.status === 'success') {
-                                // Adicionar a nova nota ao modal
-                                var noteDiv = document.createElement("div");
-                                var para = document.createElement("p");
-                                para.textContent = noteText;
-                                noteDiv.appendChild(para);
-                                notesContainer.appendChild(noteDiv);
+                                var noteRow = document.createElement("tr");
+
+                                var noteTextCell = document.createElement("td");
+                                noteTextCell.textContent = noteText;
+                                noteRow.appendChild(noteTextCell);
+
+                                var noteDateCell = document.createElement("td");
+                                var noteDate = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                                noteDateCell.textContent = noteDate;
+                                noteRow.appendChild(noteDateCell);
+
+                                var actionCell = document.createElement("td");
+                                var deleteBtn = document.createElement("button");
+                                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                                deleteBtn.className = "btn-delete";
+                                deleteBtn.onclick = function () {
+                                    fetch(`/delete_note/${data.note_id}/`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRFToken': csrftoken
+                                        }
+                                    }).then(response => response.json())
+                                        .then(data => {
+                                            if (data.status === 'success') {
+                                                notesContainer.removeChild(noteRow);
+                                            } else {
+                                                alert('Failed to delete note');
+                                            }
+                                        })
+                                        .catch(error => console.error('Error deleting note:', error));
+                                };
+                                actionCell.appendChild(deleteBtn);
+                                noteRow.appendChild(actionCell);
+
+                                notesContainer.appendChild(noteRow);
                                 noteForm.reset();
                             } else {
                                 alert('Erro ao adicionar nota');

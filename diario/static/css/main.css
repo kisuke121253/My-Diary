@@ -138,8 +138,7 @@ table {
 body {
   background-color: #f1f1f1 !important;
 }
-
-.navbar .navbar-expand-lg .navbar-dark .bg-primary {
+nav.navbar.navbar-expand-lg.navbar-dark.bg-primary {
   background-color: #127ab5 !important;
   box-shadow: 0px 1px 7px 0px rgba(0, 0, 0, 0.75);
 }
@@ -164,16 +163,16 @@ body {
 }
 
 .mood-selector button {
-  margin: 5px; /* Espaçamento entre os botões */
-  padding: 10px 20px; /* Acolchoamento para melhor toque */
-  font-size: 16px; /* Tamanho de fonte adequado */
-  cursor: pointer; /* Cursor indica ação */
-  border: none; /* Sem bordas nos botões */
-  border-radius: 5px; /* Bordas arredondadas */
-  background-color: #f0f0f0; /* Cor de fundo dos botões */
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  background-color: #f0f0f0;
   transition: background-color 0.3s ease, transform 0.3s ease,
     box-shadow 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Sombra inicial */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .mood-selector p {
@@ -181,9 +180,9 @@ body {
 }
 
 .mood-selector button:hover {
-  background-color: #e0e0e0; /* Mudança de cor ao passar o mouse */
-  transform: translateY(-5px); /* Move o botão para cima */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Sombra mais pronunciada para efeito de flutuação */
+  background-color: #e0e0e0;
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .navbar-brand {
@@ -191,14 +190,22 @@ body {
 }
 
 .modal-overlay {
-  position: fixed; /* Posiciona o overlay de forma fixa na página */
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8); /* Cor preta com transparência */
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Garante que o overlay fique sobre outros elementos */
+  z-index: 1000;
+}
+
+a.fc-daygrid-event.fc-daygrid-dot-event.fc-event.fc-event-start.fc-event-end.fc-event-past {
+  cursor: pointer;
+}
+
+a.fc-daygrid-event.fc-daygrid-dot-event.fc-event.fc-event-start.fc-event-end.fc-event-future {
+  cursor: pointer;
 }

@@ -12,7 +12,7 @@ def custom_login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('nome_da_sua_url_após_login')  # Substitua pelo nome da sua URL de destino
+                return redirect('login') 
             else:
                 messages.error(request, "Nome de usuário ou senha inválidos.")
         else:

@@ -3,76 +3,82 @@
 
 {% block head_extra %}
 <meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}" media="screen" />
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="{% static 'css/calendario/calendario.css' %}" media="screen" />
+<link rel="stylesheet" type="text/css" href="{% static 'css/relatorio/relatorio.css' %}" media="screen" />
 <title>Acompanhamento Semanal</title>
-<style>
-    .output-div {
-        min-height: 100px;
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-top: 10px;
-        background-color: #f9f9f9;
-        white-space: pre-wrap;
-        /* Mantém a formatação de espaços e quebras de linha */
-        overflow-y: auto;
-        /* Adiciona rolagem vertical se o conteúdo for muito extenso */
-        font-family: Arial, sans-serif;
-        font-size: 0.9rem;
-        color: #333;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
-<h1>Formulário de Acompanhamento Semanal</h1>
-<canvas id="moodChart" width="400" height="400"></canvas>
-<form method="post" action="{% url 'acompanhamento_semanal' %}" id="form-acompanhamento">
-    {% csrf_token %}
-    <p>
-        <label for="nome">Nome:</label>
-        <input type="text" id="nome" name="nome" value="{{ nome }}" readonly>
-    </p>
-    <p>
-        <label for="data">Data:</label>
-        <input type="date" id="data" name="data" value="{{ data }}" readonly>
-    </p>
-    <p>
-        <label for="numero_sessao">Número da Sessão:</label>
-        <input type="number" id="numero_sessao" name="numero_sessao" value="{{ numero_sessao }}" readonly>
-    </p>
-    <p>
-        <label for="sintomas">Sintomas:</label>
-        <textarea id="sintomas" name="sintomas"></textarea>
-    </p>
-    <p>
-        <label for="estrategias_coping">Estratégias de Coping:</label>
-        <textarea id="estrategias_coping" name="estrategias_coping"></textarea>
-    </p>
-    <p>
-        <label for="observacoes_terapeuta">Observações do Terapeuta:</label>
-        <textarea id="observacoes_terapeuta" name="observacoes_terapeuta"></textarea>
-    </p>
-    <p>
-        <label for="objetivos_proxima_semana">Objetivos para a Próxima Semana:</label>
-        <textarea id="objetivos_proxima_semana" name="objetivos_proxima_semana"></textarea>
-    </p>
+<div class="container-relatorio">
+    <h4 class="h4-relatorio">Formulário de Acompanhamento Semanal</h4>
+</div>
+<div class="folha-container-relatorio">
 
-    <input type="hidden" id="id_avaliacao_humor" name="avaliacao_humor">
-    <input type="hidden" id="id_mudancas_humor" name="mudancas_humor">
-    <input type="hidden" id="id_eventos_semana" name="eventos_semana">
+    <form method="post" action="{% url 'acompanhamento_semanal' %}" id="form-acompanhamento">
+        {% csrf_token %}
+        <div class="form-acompanhamento-relatorio">
+            <div class="form-group">
+                <label for="nome">Nome:</label>
+                <input type="text" class="form-control" id="nome" name="nome" value="{{ nome }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="data">Data:</label>
+                <input type="date" class="form-control" id="data" name="data" value="{{ data }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="numero_sessao">Número da Sessão:</label>
+                <input type="number" class="form-control" id="numero_sessao" name="numero_sessao"
+                    value="{{ numero_sessao }}" readonly>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="sintomas">Sintomas:</label>
+            <textarea class="form-control" id="sintomas" name="sintomas"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="estrategias_coping">Estratégias de Coping:</label>
+            <textarea class="form-control" id="estrategias_coping" name="estrategias_coping"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="objetivos_proxima_semana">Objetivos para a Próxima Semana:</label>
+            <textarea class="form-control" id="objetivos_proxima_semana" name="objetivos_proxima_semana"></textarea>
+        </div>
 
-    <div id="avaliacao-humor" class="output-div"></div>
-    <div id="mudancas-humor" class="output-div"></div>
-    <div id="eventos-semana" class="output-div"></div>
 
-    <button type="submit">Enviar</button>
-</form>
+
+        <input type="hidden" id="id_avaliacao_humor" name="avaliacao_humor">
+        <input type="hidden" id="id_mudancas_humor" name="mudancas_humor">
+        <input type="hidden" id="id_eventos_semana" name="eventos_semana">
+        <div class="container-grafico">
+            <div id="avaliacao-humor" class="output-div"></div>
+            <div class="relatorio-grafico">
+                <canvas id="moodChart" width="400" height="400"></canvas>
+            </div>
+        </div>
+        <div id="mudancas-humor" class="output-div"></div>
+        <div id="eventos-semana" class="output-div"></div>
+        <div class="form-group">
+            <label for="observacoes_terapeuta">Observações do Terapeuta:</label>
+            <textarea class="form-control" id="observacoes_terapeuta" name="observacoes_terapeuta"></textarea>
+        </div>
+
+
+        <button type="submit" class="btn btn-custom">Enviar</button>
+        <button type="button" class="btn btn-custom" onclick="downloadAsPDF()">Baixar PDF</button>
+        <button type="button" class="btn btn-custom" onclick="downloadAsWord()">Baixar Word</button>
+    </form>
+</div>
+<div class="overlay" id="overlay"></div>
+<div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+
 {% endblock %}
 
-
 {% block scripts %}
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     var moodData = {{ mood_data| safe }};
@@ -80,57 +86,57 @@
     var dataValues = moods.map(mood => moodData[mood] || 0);
 </script>
 <script>
+    function downloadAsPDF() {
+        document.getElementById('form-acompanhamento').action = "{% url 'download_pdf' %}";
+        document.getElementById('form-acompanhamento').submit();
+    }
+
+    function downloadAsWord() {
+        document.getElementById('form-acompanhamento').action = "{% url 'download_word' %}";
+        document.getElementById('form-acompanhamento').submit();
+    }
+</script>
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         gerarRelatorioCompleto();
     });
 
-    // document.getElementById('id_avaliacao_humor').value = data.result;  // Para avaliação de humor
-    // document.getElementById('id_mudancas_humor').value = data.mudancas_humor;  // Para mudanças de humor
-    // document.getElementById('id_eventos_semana').value = data.analise_ia;  // Para eventos da semana
-
-
     async function gerarRelatorioCompleto() {
+        const spinner = document.getElementById('loadingSpinner');
+        const overlay = document.getElementById('overlay');
+
+        overlay.style.display = 'block';
+        spinner.style.display = 'block';
+
         try {
-            // Chama a função analisarMudancaHumor e espera a sua conclusão
             await analisarMudancaHumor();
-            // Aguarda 2 segundos antes de chamar a próxima função
             await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Chama a função analisarSentimento e espera a sua conclusão
             await analisarSentimento();
-            // Aguarda 2 segundos antes de chamar a próxima função
             await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Chama a função consultarIAeEventos e espera a sua conclusão
             await consultarIAeEventos();
-
-            alert('Relatório completo gerado com sucesso!');
+            await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (error) {
             console.error('Erro ao gerar relatório completo:', error);
             alert('Erro ao gerar relatório completo. Verifique o console para mais detalhes.');
+        } finally {
+            spinner.style.display = 'none';
+            overlay.style.display = 'none';
         }
     }
 
+
     function formatarTextoIA(texto) {
-        let textoLimpo = texto.replace(/[\\*]+/g, ''); // Remove asteriscos
-        textoLimpo = textoLimpo.trim(); // Remove espaços extras do início e fim
-
-        // Substitui dois ou mais novas linhas por um parágrafo
+        let textoLimpo = texto.replace(/[\\*]+/g, '');
+        textoLimpo = textoLimpo.trim();
         textoLimpo = textoLimpo.replace(/\n{2,}/g, '</p><p>');
-
-        // Envolva o resultado em parágrafos
         textoLimpo = `<p>${textoLimpo}</p>`;
-
-        // Substitui qualquer nova linha única por uma quebra de linha
         textoLimpo = textoLimpo.replace(/\n/g, '<br>');
-
         return textoLimpo;
     }
 
-
     function analisarSentimento() {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const avaliacaoHumor = document.querySelector('#id_avaliacao_humor').value; // Supondo que você ainda colete isso de algum lugar.
+        const avaliacaoHumor = document.querySelector('#id_avaliacao_humor').value;
         return fetch("{% url 'analyze_sentiment' %}", {
             method: 'POST',
             headers: {
@@ -142,7 +148,7 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById('avaliacao-humor').innerHTML = formatarTextoIA(data.result);
-                document.getElementById('id_avaliacao_humor').value = data.result; // Atualiza o valor do campo oculto
+                document.getElementById('id_avaliacao_humor').value = data.result;
             });
     }
 
@@ -159,7 +165,7 @@
             .then(data => {
                 if (data.mudancas_humor) {
                     document.getElementById('mudancas-humor').innerHTML = formatarTextoIA(data.mudancas_humor);
-                    document.getElementById('id_mudancas_humor').value = data.mudancas_humor; // Atualiza o valor do campo oculto
+                    document.getElementById('id_mudancas_humor').value = data.mudancas_humor;
                 } else {
                     alert('Erro ao analisar mudança de humor: ' + data.error);
                 }
@@ -180,7 +186,7 @@
             .then(data => {
                 if (data.success) {
                     document.getElementById('eventos-semana').innerHTML = formatarTextoIA(data.analise_ia);
-                    document.getElementById('id_eventos_semana').value = data.analise_ia; // Atualiza o valor do campo oculto
+                    document.getElementById('id_eventos_semana').value = data.analise_ia;
                 } else {
                     alert('Erro ao buscar eventos: ' + data.error);
                 }
@@ -235,6 +241,6 @@
             }
         }
     });
-    // });
+
 </script>
 {% endblock %}

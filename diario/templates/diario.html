@@ -12,14 +12,12 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
 <title>{% block title %}Meu Diário{% endblock %}</title>
-<!-- Incluir CSS Bootstrap para estilização rápida -->
 
 {% endblock %}
 </head>
 
 <body>
     {% block content %}
-    <!-- Formulário para nome do diário -->
     <form id="diaryNameForm" method="post" action="{% url 'salvar_nome_diario' %}">
         {% csrf_token %}
         <div class="diaryCapa2">
@@ -37,7 +35,6 @@
         </div>
     </form>
 
-    <!-- Conteúdo do diário, inicialmente escondido -->
     <div id="diaryContent" style="display:none;">
         <div class="diaryEdit">
             <a>SEU DIÁRIO:</a>
@@ -53,7 +50,6 @@
                 {% endfor %}
             </div>
         </div>
-        <!-- Adicionando a div no conteúdo do diário -->
 
         <div class="section-icons-button">
             <div>
@@ -91,11 +87,8 @@
             </div>
         </div>
         <div class="book_style">
-            <!-- capa -->
             <div class="book_style_capa">
-                <!-- pagina 1 -->
                 <div class="book_style_pg1">
-                    <!-- pagina 2 -->
                     <div class="book_style_pg2">
                         <div id="book">
 
@@ -110,8 +103,6 @@
         </div>
     </div>
 
-    <!-- Modal -->
-    <!-- Modal HTML -->
     <div class="modal fade" id="editDiarioModal" tabindex="-1" role="dialog" aria-labelledby="editDiarioModalLabel">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -123,7 +114,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="editDiarioForm">
-                        <input type="hidden" id="diarioId" name="diario_id"> <!-- Campo oculto para o ID -->
+                        <input type="hidden" id="diarioId" name="diario_id">
                         <div class="form-group">
                             <label for="diarioNome">Nome do Diário:</label>
                             <input type="text" class="form-control" id="diarioNome" name="nome_diario">
@@ -135,7 +126,6 @@
         </div>
     </div>
 
-    <!-- Modal de criação de evento -->
     <div class="modal fade" id="createEventModal" tabindex="-1" role="dialog" aria-labelledby="createEventModalLabel"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -173,7 +163,6 @@
         </div>
     </div>
 
-    <!-- Modal com classes e IDs personalizados -->
     <div class="modal fade" id="problemaModal" tabindex="-1" aria-labelledby="modalProblemaLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -185,17 +174,22 @@
                 </div>
                 <div class="modal-body">
                     <textarea id="problemaInput" class="form-control" rows="3"></textarea>
-                    <div id="respostaProblema" class="mt-2"></div> <!-- Elemento para mostrar a resposta -->
+                    <div id="respostaProblema" class="mt-2"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-success" onclick="enviarProblema()">Enviar</button>
                 </div>
+                <div class="overlay" id="overlay"></div>
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal de anotação-->
     <div class="modal fade" id="modalAnotacao" tabindex="-1" aria-labelledby="modalAnotacaoLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -211,7 +205,6 @@
                     <hr>
                     <h6>Anotações Anteriores:</h6>
                     <ul id="listaAnotacoes" class="list-group">
-                        <!-- Anotações serão carregadas aqui -->
                     </ul>
                 </div>
                 <div class="modal-footer">
@@ -222,9 +215,6 @@
         </div>
     </div>
 
-
-
-    <!-- Modal da voz-->
     <div class="modal fade" id="voiceModal" tabindex="-1" role="dialog" aria-labelledby="voiceModalLabel"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -249,6 +239,8 @@
             </div>
         </div>
     </div>
+
+
     {% endblock %}
 
 
@@ -275,7 +267,6 @@
                 },
                 success: function (response) {
                     if (response.status === 'sucesso') {
-                        // Verifica se a página é par e ajusta para exibir a página ímpar anterior junto com ela
                         if (response.numero_pagina % 2 === 0) {
                             currentPage = response.numero_pagina - 1;
                         } else {
@@ -310,8 +301,8 @@
                 .then(data => {
                     if (data.message) {
                         alert(data.message);
-                        document.getElementById('textoAnotacao').value = ''; // Limpa o campo de texto
-                        carregarAnotacoes(); // Recarrega a lista de anotações
+                        document.getElementById('textoAnotacao').value = '';
+                        carregarAnotacoes();
                     }
                 })
                 .catch(error => alert('Erro ao salvar a anotação: ' + error));
@@ -323,7 +314,7 @@
                 .then(response => response.json())
                 .then(data => {
                     const lista = document.getElementById('listaAnotacoes');
-                    lista.innerHTML = ''; // Limpa a lista existente
+                    lista.innerHTML = '';
                     data.forEach(anotacao => {
                         const item = document.createElement('li');
                         item.className = 'list-group-item d-flex justify-content-between align-items-center';
@@ -347,7 +338,7 @@
                 .then(response => response.json())
                 .then(data => {
                     alert(data.message);
-                    carregarAnotacoes(); // Recarrega a lista após a exclusão
+                    carregarAnotacoes();
                 })
                 .catch(error => alert('Erro ao excluir a anotação: ' + error));
         }
@@ -371,9 +362,9 @@
     </script>
     <script>
         $('#editDiarioModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget) // Botão que acionou o modal
-            var diarioId = button.data('diario-id') // Extrai informação do atributo data-diario-id
-            var diarioNome = button.data('diario-nome') // Extrai informação do atributo data-diario-nome
+            var button = $(event.relatedTarget)
+            var diarioId = button.data('diario-id')
+            var diarioNome = button.data('diario-nome')
             var modal = $(this)
             modal.find('.modal-title').text('Editar Diário: ' + diarioNome)
             modal.find('#diarioNome').val(diarioNome)
@@ -381,9 +372,12 @@
         });
 
         window.onbeforeunload = function () {
-            const pageCount = countUsedPages(false);
-            savePageCount(pageCount); // Função que salva a contagem no backend
+            const pageCount = countUsedPages();
+            if (pageCount > 0) {
+                savePageCount(pageCount);
+            }
         };
+
 
 
         function getCookie(name) {
@@ -401,24 +395,23 @@
             return cookieValue;
         }
 
-        const csrftoken = getCookie('csrftoken');  // Obtém o token CSRF do cookie
+        const csrftoken = getCookie('csrftoken');
 
         $(document).ready(function () {
             $('.edit-btn').on('click', function () {
-                var diarioId = $(this).data('diario-id');  // Pega o ID do diário
-                var diarioNome = $(this).data('diario-nome');  // Pega o nome do diário
+                var diarioId = $(this).data('diario-id');
+                var diarioNome = $(this).data('diario-nome');
 
-                // Define os valores no modal
                 $('#diarioId').val(diarioId);
                 $('#diarioNome').val(diarioNome);
 
-                // Mostra o modal
+
                 $('#editDiarioModal').modal('show');
             });
 
             $('#editDiarioForm').on('submit', function (e) {
                 e.preventDefault();
-                var diarioId = $('#diarioId').val();  // Deveria pegar o ID do diário agora sem problemas
+                var diarioId = $('#diarioId').val();
 
                 $.ajax({
                     url: `/editar-diario/${diarioId}/`,
@@ -485,7 +478,7 @@
 
         document.getElementById('voiceModal').addEventListener('hidden.bs.modal', function () {
             recognition.stop();
-            recognition.removeEventListener('end', recognition.start); // Remove o listener que reinicia o reconhecimento
+            recognition.removeEventListener('end', recognition.start);
         });
 
 
@@ -510,20 +503,19 @@
 
         $(document).ready(function () {
             loadInitialPageCount();
-            buscarEPreencherTodasPaginas(); // Chama ao carregar a página
+            buscarEPreencherTodasPaginas();
+            initializeDiary();
         });
 
-        let currentPage = 1; // Começa mostrando a página 1
+        let currentPage = 1;
 
         function startDiary() {
-            // Esconde o formulário e mostra o conteúdo do diário
             $('#diaryNameForm').hide();
             $('#diaryContent').show();
-            initializeBook(); // Inicia o livro
+            initializeBook();
         }
 
         function initializeBook() {
-            // Adiciona quatro páginas iniciais
             addNewPages(1);
             addNewPages(3);
             updateBookDisplay();
@@ -551,10 +543,10 @@
                 <textarea id="conteudoPagina${pageNumber}" placeholder="Página ${pageNumber}"></textarea>
             </div>`);
 
-                // Adiciona o evento de input com debounce
                 $(`#conteudoPagina${pageNumber}`).on('input', debounce(function () {
                     salvarPaginaDebounce(pageNumber);
-                }, 1)); // Aguarda 1 segundo após o usuário parar de digitar para salvar
+                    updateDailyPageCountDisplay(countUsedPages());
+                }, 1000));
             }
         }
 
@@ -575,7 +567,7 @@
         function salvarPaginaDebounce(numeroPagina) {
             var conteudo = document.getElementById('conteudoPagina' + numeroPagina).value;
             $.ajax({
-                url: "{% url 'salvar_pagina' %}", // Substitua pela URL correta
+                url: "{% url 'salvar_pagina' %}",
                 type: 'POST',
                 data: {
                     'numero_pagina': numeroPagina,
@@ -584,93 +576,75 @@
                 },
                 success: function (response) {
                     console.log("Conteúdo salvo com sucesso!");
+                    savePageCount(countUsedPages());
                 },
                 error: function () {
                     console.log("Erro ao salvar o conteúdo.");
                 }
             });
         }
+
         function buscarEPreencherTodasPaginas() {
             $.ajax({
                 url: "{% url 'buscar_todas_paginas' %}",
                 type: 'GET',
                 success: function (response) {
                     if (response.status === 'sucesso') {
-                        // Loop através do array de páginas e preenche cada uma
                         response.paginas.forEach(function (pagina) {
-                            // Verifica se a página já existe, se não, cria-a
                             if ($('#conteudoPagina' + pagina.numero_pagina).length === 0) {
-                                // Função fictícia, substitua pela sua lógica para adicionar uma nova página
-                                adicionarPagina(pagina.numero_pagina);
+                                addNewPages(pagina.numero_pagina);
                             }
-                            // Preenche o conteúdo da página
                             $('#conteudoPagina' + pagina.numero_pagina).val(pagina.conteudo);
                         });
+                        updateDailyPageCountDisplay(countUsedPages());
                     } else {
                         alert("Erro ao buscar dados das páginas: " + response.mensagem);
                     }
                 },
                 error: function () {
-                    // alert("Erro na solicitação ao servidor.");
+
                 }
             });
         }
 
         $(document).ready(function () {
-            // Aqui é onde você verifica se o nome do diário já foi definido
             if (typeof diaryNameDefined !== 'undefined' && diaryNameDefined) {
-                // Se o nome do diário já foi definido, esconde o formulário e mostra o conteúdo do diário diretamente
                 startDiary();
             } else {
-                // Caso contrário, apenas mostra o formulário
                 $('#diaryNameForm').show();
             }
         });
 
-
-        $(document).ready(function () {
-            checkEndOfDay();
-            initializeDiary();
-            // Reset saved flag at midnight
-            setInterval(function () {
-                const now = new Date();
-                if (now.getHours() === 0 && now.getMinutes() === 0) {
-                    $('#dailyPageCount').data('saved', false);
-                }
-            }, 60000);  // Verifica a cada minuto
-        });
-
-        // Função de inicialização completa
         function initializeDiary() {
-            bindPageInputEvents(); // Vincula eventos de entrada para contagem em tempo real
-            // Verifica o final do dia ao carregar a página
+            bindPageInputEvents();
+            checkEndOfDay();
         }
 
-        // Função para vincular eventos de entrada a todas as páginas
         function bindPageInputEvents() {
             $('#book').on('input', 'textarea', function () {
-                let pageCount = countUsedPages(); // Atualiza a contagem sempre que um textarea é modificado
-                updateDailyPageCountDisplay(pageCount);  // Atualiza a exibição da contagem de páginas
+                let pageCount = countUsedPages();
+                updateDailyPageCountDisplay(pageCount);
             });
         }
 
-
-        // Função para contar páginas usadas e logar o resultado
-        function countAndLogPages() {
-            let pageCount = countUsedPages();
-            console.log("Páginas usadas até agora: " + pageCount);
-            updateDailyPageCountDisplay(pageCount);  // Atualiza a exibição da contagem de páginas
+        function countUsedPages() {
+            let pageCount = 0;
+            $('#book .page textarea').each(function () {
+                if ($(this).val().trim() !== '') {
+                    pageCount++;
+                }
+            });
+            return pageCount;
         }
 
-        // Função para carregar a contagem de páginas no início do dia
         function loadInitialPageCount() {
             $.ajax({
-                url: "{% url 'get_today_page_count' %}",  // Substitua pela URL correta do seu backend
+                url: "{% url 'get_today_page_count' %}",
                 type: 'GET',
                 success: function (response) {
                     if (response.status === 'success') {
                         updateDailyPageCountDisplay(response.count);
-                        setTimeout(countAndUpdatePages, 100);  // Dá tempo para o DOM carregar completamente antes de contar
+                        setTimeout(countAndUpdatePages, 100);
                     } else {
                         console.log("Erro ao carregar a contagem de páginas: " + response.message);
                         updateDailyPageCountDisplay(1);
@@ -684,53 +658,30 @@
         }
 
         function updateDailyPageCountDisplay(count) {
-            $('#dailyPageCount').text(count);  // Atualiza o texto na div de contagem de páginas
+            $('#dailyPageCount').text(count);
         }
 
-
-        $(document).ready(function () {
-            loadInitialPageCount();
-        });
-
-
-        // Função para contar páginas usadas
-        function countUsedPages() {
-            let pageCount = 0;
-            $('#book .page textarea').each(function () {
-                if ($(this).val().trim() !== '') {
-                    pageCount++;
-                }
-            });
-            return pageCount;
-        }
-
-        // Função para atualizar a exibição da contagem de páginas
-        function updateDailyPageCountDisplay(count) {
-            $('#dailyPageCount').text(count);  // Atualiza o texto na div de contagem de páginas
-        }
-
-        // Função para verificar o final do dia e agendar a próxima verificação
         function checkEndOfDay() {
             const now = new Date();
             const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
             const msUntilEndOfDay = endOfDay - now;
 
             setTimeout(function () {
-                if (!$('#dailyPageCount').data('saved')) {  // Checa se a contagem ainda não foi salva
+                if (!$('#dailyPageCount').data('saved')) {
                     const usedPagesToday = countUsedPages();
-                    savePageCount(usedPagesToday);
-                    $('#dailyPageCount').data('saved', true);  // Marca como salva
+                    if (usedPagesToday > 0) {
+                        savePageCount(usedPagesToday);
+                        $('#dailyPageCount').data('saved', true);
+                    }
                 }
-                updateDailyPageCountDisplay(0);  // Reseta a contagem no display para o próximo dia
-                checkEndOfDay();  // Agendar próxima verificação para o próximo dia
+                updateDailyPageCountDisplay(0);
+                checkEndOfDay();
             }, msUntilEndOfDay);
         }
 
-
-        // Função para salvar a contagem de páginas no banco de dados
         function savePageCount(pageCount) {
             $.ajax({
-                url: "{% url 'save_page_count' %}", // Substitua pela URL correta do seu backend
+                url: "{% url 'save_page_count' %}",
                 type: 'POST',
                 data: {
                     'page_count': pageCount,
@@ -745,10 +696,12 @@
             });
         }
 
+
+
         function submitEventForm() {
-            var csrfToken = $('[name=csrfmiddlewaretoken]').val(); // Obter o valor do token CSRF
+            var csrfToken = $('[name=csrfmiddlewaretoken]').val();
             var data = {
-                'csrfmiddlewaretoken': csrfToken, // Incluir o token CSRF nos dados enviados
+                'csrfmiddlewaretoken': csrfToken,
                 'titulo': $('#titulo').val(),
                 'descricao': $('#descricao').val(),
                 'data_inicio': $('#data_inicio').val(),
@@ -757,7 +710,7 @@
 
             $.post('/create_event/', data, function () {
                 $('#createEventModal').modal('hide');
-                location.reload();  // recarregar a página para mostrar o novo evento
+                location.reload();
             }).fail(function () {
                 alert('Erro ao criar evento. Por favor, tente novamente.');
             });
@@ -765,6 +718,10 @@
 
         function enviarProblema() {
             const userInput = document.getElementById('problemaInput').value;
+
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('loadingSpinner').style.display = 'block';
+
             fetch("{% url 'get_recommendations' %}", {
                 method: 'POST',
                 headers: {
@@ -775,18 +732,23 @@
             }).then(response => response.json())
                 .then(data => {
                     const respostaDiv = document.getElementById('respostaProblema');
-                    respostaDiv.innerHTML = formatarResposta(data.message); // Formata e atualiza o div com a resposta
+                    respostaDiv.innerHTML = formatarResposta(data.message);
+
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('loadingSpinner').style.display = 'none';
                 })
                 .catch(error => {
                     console.error('Erro ao buscar recomendações:', error);
                     const respostaDiv = document.getElementById('respostaProblema');
-                    respostaDiv.innerHTML = `<p>Erro ao processar sua solicitação.</p>`; // Mostra erro
+                    respostaDiv.innerHTML = `<p>Erro ao processar sua solicitação.</p>`;
+
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('loadingSpinner').style.display = 'none';
                 });
         }
 
         function formatarResposta(mensagem) {
-            // Converte a mensagem formatada em markdown para uma lista HTML
-            const linhas = mensagem.split('*'); // Divide a mensagem em itens de lista
+            const linhas = mensagem.split('*');
             const html = linhas.map(linha => {
                 if (linha.trim().length > 0) {
                     return `<li>${linha.trim()}</li>`;
