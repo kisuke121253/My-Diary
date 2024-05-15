@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>diario.views &#8212; Documentação Diario 15/05/2024</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=385d0745"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/translations.js?v=000972dd"></script>
+    <link rel="index" title="Índice" href="../../genindex.html" />
+    <link rel="search" title="Buscar" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fonte para diario.views</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render</span><span class="p">,</span> <span class="n">redirect</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.forms</span> <span class="kn">import</span> <span class="n">AuthenticationForm</span>
+<span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">messages</span>
+<span class="kn">from</span> <span class="nn">django.views.decorators.http</span> <span class="kn">import</span> <span class="n">require_POST</span>
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.forms</span> <span class="kn">import</span> <span class="n">UserCreationForm</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.decorators</span> <span class="kn">import</span> <span class="n">login_required</span>
+<span class="kn">import</span> <span class="nn">whisper</span>
+<span class="kn">from</span> <span class="nn">django.core.files.base</span> <span class="kn">import</span> <span class="n">ContentFile</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">babel.dates</span> <span class="kn">import</span> <span class="n">format_date</span>
+<span class="kn">from</span> <span class="nn">django.db.models.functions</span> <span class="kn">import</span> <span class="n">TruncDate</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">groupby</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">google.generativeai</span> <span class="k">as</span> <span class="nn">genai</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">JsonResponse</span>
+<span class="kn">from</span> <span class="nn">django.views.decorators.csrf</span> <span class="kn">import</span> <span class="n">csrf_exempt</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Diario</span><span class="p">,</span> <span class="n">Pagina</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">authenticate</span><span class="p">,</span> <span class="n">login</span><span class="p">,</span> <span class="n">logout</span>
+<span class="kn">from</span> <span class="nn">.forms</span> <span class="kn">import</span> <span class="n">SignUpForm</span><span class="p">,</span> <span class="n">LoginForm</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">import</span> <span class="nn">pytz</span>
+<span class="kn">from</span> <span class="nn">django.utils.timezone</span> <span class="kn">import</span> <span class="n">localtime</span><span class="p">,</span> <span class="n">activate</span>
+<span class="kn">from</span> <span class="nn">django.utils.timezone</span> <span class="kn">import</span> <span class="n">now</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">MoodLog</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Evento</span><span class="p">,</span> <span class="n">Nota</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">PageCount</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">redirect</span>
+<span class="kn">from</span> <span class="nn">django.utils.dateparse</span> <span class="kn">import</span> <span class="n">parse_datetime</span>
+<span class="kn">from</span> <span class="nn">django.core.serializers</span> <span class="kn">import</span> <span class="n">serialize</span>
+<span class="kn">from</span> <span class="nn">django.utils.timezone</span> <span class="kn">import</span> <span class="n">localtime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">django.views.decorators.http</span> <span class="kn">import</span> <span class="n">require_http_methods</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Anotacao</span>
+<span class="kn">from</span> <span class="nn">docx</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">docx.shared</span> <span class="kn">import</span> <span class="n">Pt</span>
+<span class="kn">from</span> <span class="nn">docx.enum.text</span> <span class="kn">import</span> <span class="n">WD_PARAGRAPH_ALIGNMENT</span>
+<span class="kn">from</span> <span class="nn">docx.oxml.ns</span> <span class="kn">import</span> <span class="n">qn</span>
+<span class="kn">from</span> <span class="nn">docx.oxml</span> <span class="kn">import</span> <span class="n">OxmlElement</span>
+<span class="kn">from</span> <span class="nn">reportlab.lib.pagesizes</span> <span class="kn">import</span> <span class="n">letter</span>
+<span class="kn">from</span> <span class="nn">reportlab.pdfgen</span> <span class="kn">import</span> <span class="n">canvas</span>
+<span class="kn">from</span> <span class="nn">reportlab.lib.units</span> <span class="kn">import</span> <span class="n">inch</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">reportlab.lib.styles</span> <span class="kn">import</span> <span class="n">getSampleStyleSheet</span><span class="p">,</span> <span class="n">ParagraphStyle</span>
+<span class="kn">from</span> <span class="nn">reportlab.platypus</span> <span class="kn">import</span> <span class="n">SimpleDocTemplate</span><span class="p">,</span> <span class="n">Paragraph</span><span class="p">,</span> <span class="n">Spacer</span><span class="p">,</span> <span class="n">PageBreak</span>
+<span class="kn">from</span> <span class="nn">reportlab.lib.enums</span> <span class="kn">import</span> <span class="n">TA_CENTER</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">AcompanhamentoSemanal</span><span class="p">,</span> <span class="n">MoodLog</span>
+<span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">AcompanhamentoSemanal</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Count</span>
+
+
+<div class="viewcode-block" id="to_markdown">
+<a class="viewcode-back" href="../../diario.html#diario.views.to_markdown">[documentos]</a>
+<span class="k">def</span> <span class="nf">to_markdown</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;•&#39;</span><span class="p">,</span> <span class="s1">&#39;  *&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">indent</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s1">&#39;&gt; &#39;</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="home">
+<a class="viewcode-back" href="../../diario.html#diario.views.home">[documentos]</a>
+<span class="k">def</span> <span class="nf">home</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;diario&#39;</span><span class="p">)</span>  
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">)</span> </div>
+
+
+<div class="viewcode-block" id="registro">
+<a class="viewcode-back" href="../../diario.html#diario.views.registro">[documentos]</a>
+<span class="k">def</span> <span class="nf">registro</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">SignUpForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="n">username</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">cleaned_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
+            <span class="n">raw_password</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">cleaned_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password1&#39;</span><span class="p">)</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">raw_password</span><span class="p">)</span>
+            <span class="n">login</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;diario&#39;</span><span class="p">)</span> 
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">SignUpForm</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;registro.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;form&#39;</span><span class="p">:</span> <span class="n">form</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="login_view">
+<a class="viewcode-back" href="../../diario.html#diario.views.login_view">[documentos]</a>
+<span class="k">def</span> <span class="nf">login_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">LoginForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">authenticate</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">login</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;diario&#39;</span><span class="p">)</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;login.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;form&#39;</span><span class="p">:</span> <span class="n">form</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Usuário ou senha inválidos&#39;</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">LoginForm</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;login.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;form&#39;</span><span class="p">:</span> <span class="n">form</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="logout_view">
+<a class="viewcode-back" href="../../diario.html#diario.views.logout_view">[documentos]</a>
+<span class="k">def</span> <span class="nf">logout_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">logout</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">)</span>  </div>
+
+
+<div class="viewcode-block" id="calendario">
+<a class="viewcode-back" href="../../diario.html#diario.views.calendario">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">calendario</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">activate</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;America/Sao_Paulo&#39;</span><span class="p">))</span>
+
+    <span class="n">eventos</span> <span class="o">=</span> <span class="n">Evento</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">data_inicio__gte</span><span class="o">=</span><span class="n">now</span><span class="p">())</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;data_inicio&#39;</span><span class="p">)</span>
+
+    <span class="n">eventos_ajustados</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">evento</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;titulo&#39;</span><span class="p">:</span> <span class="n">evento</span><span class="o">.</span><span class="n">titulo</span><span class="p">,</span>
+            <span class="s1">&#39;data_inicio&#39;</span><span class="p">:</span> <span class="n">localtime</span><span class="p">(</span><span class="n">evento</span><span class="o">.</span><span class="n">data_inicio</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Hh%M&#39;</span><span class="p">),</span>  
+            <span class="s1">&#39;data_fim&#39;</span><span class="p">:</span> <span class="n">localtime</span><span class="p">(</span><span class="n">evento</span><span class="o">.</span><span class="n">data_fim</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Hh%M&#39;</span><span class="p">),</span>       
+        <span class="p">}</span> <span class="k">for</span> <span class="n">evento</span> <span class="ow">in</span> <span class="n">eventos</span>
+    <span class="p">]</span>
+
+    <span class="n">proximos_eventos</span> <span class="o">=</span> <span class="n">eventos_ajustados</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;calendario.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;eventos&#39;</span><span class="p">:</span> <span class="n">eventos_ajustados</span><span class="p">,</span>
+        <span class="s1">&#39;proximos_eventos&#39;</span><span class="p">:</span> <span class="n">proximos_eventos</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="detalhe_evento">
+<a class="viewcode-back" href="../../diario.html#diario.views.detalhe_evento">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">detalhe_evento</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">evento_id</span><span class="p">):</span>
+    <span class="n">evento</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Evento</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">evento_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;calendario.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;evento&#39;</span><span class="p">:</span> <span class="n">evento</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="diario">
+<a class="viewcode-back" href="../../diario.html#diario.views.diario">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">diario</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">date_today</span> <span class="o">=</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+    <span class="n">diario</span> <span class="o">=</span> <span class="n">Diario</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span> 
+    <span class="n">already_submitted</span> <span class="o">=</span> <span class="n">MoodLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date_today</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;diary_name&#39;</span><span class="p">:</span> <span class="n">diario</span><span class="o">.</span><span class="n">nome</span> <span class="k">if</span> <span class="n">diario</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;diarios&#39;</span><span class="p">:</span> <span class="n">Diario</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-data_criacao&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;already_submitted&#39;</span><span class="p">:</span> <span class="n">already_submitted</span><span class="p">,</span>
+        <span class="s1">&#39;diario&#39;</span><span class="p">:</span> <span class="n">diario</span>  
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;diario.html&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="salvar_nome_diario">
+<a class="viewcode-back" href="../../diario.html#diario.views.salvar_nome_diario">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">salvar_nome_diario</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">:</span>
+        <span class="n">nome_diario</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;diary_name&#39;</span><span class="p">)</span>
+        <span class="n">diario</span><span class="p">,</span> <span class="n">created</span> <span class="o">=</span> <span class="n">Diario</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">diario</span><span class="o">.</span><span class="n">nome</span> <span class="o">=</span> <span class="n">nome_diario</span>
+        <span class="n">diario</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;diario&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;diario&#39;</span><span class="p">)</span></div>
+
+    
+
+<div class="viewcode-block" id="salvar_pagina">
+<a class="viewcode-back" href="../../diario.html#diario.views.salvar_pagina">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="nd">@csrf_exempt</span> 
+<span class="k">def</span> <span class="nf">salvar_pagina</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">numero_pagina</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;numero_pagina&#39;</span><span class="p">)</span>
+        <span class="n">conteudo</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;conteudo&#39;</span><span class="p">)</span>
+        <span class="n">diario</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Diario</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>  
+
+        <span class="n">pagina</span><span class="p">,</span> <span class="n">created</span> <span class="o">=</span> <span class="n">Pagina</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span>
+            <span class="n">diario</span><span class="o">=</span><span class="n">diario</span><span class="p">,</span>
+            <span class="n">numero_pagina</span><span class="o">=</span><span class="n">numero_pagina</span><span class="p">,</span>
+            <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;conteudo&#39;</span><span class="p">:</span> <span class="n">conteudo</span><span class="p">},</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;sucesso&#39;</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;falha&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="buscar_todas_paginas">
+<a class="viewcode-back" href="../../diario.html#diario.views.buscar_todas_paginas">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">buscar_todas_paginas</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">diario</span> <span class="o">=</span> <span class="n">Diario</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">paginas</span> <span class="o">=</span> <span class="n">diario</span><span class="o">.</span><span class="n">paginas</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;numero_pagina&#39;</span><span class="p">)</span>
+        <span class="n">dados_paginas</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;numero_pagina&#39;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">numero_pagina</span><span class="p">,</span> <span class="s1">&#39;conteudo&#39;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">conteudo</span><span class="p">}</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paginas</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;sucesso&#39;</span><span class="p">,</span> <span class="s1">&#39;paginas&#39;</span><span class="p">:</span> <span class="n">dados_paginas</span><span class="p">})</span>
+    <span class="k">except</span> <span class="n">Diario</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;erro&#39;</span><span class="p">,</span> <span class="s1">&#39;mensagem&#39;</span><span class="p">:</span> <span class="s1">&#39;Diário não encontrado&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="editar_diario">
+<a class="viewcode-back" href="../../diario.html#diario.views.editar_diario">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">editar_diario</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">diario_id</span><span class="p">):</span>
+    <span class="n">diario</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Diario</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">diario_id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>  
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">diario</span><span class="o">.</span><span class="n">nome</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nome_diario&#39;</span><span class="p">)</span>
+        <span class="n">diario</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;diario&#39;</span><span class="p">)</span>  
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;editar_diario.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;diario&#39;</span><span class="p">:</span> <span class="n">diario</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="save_page_count">
+<a class="viewcode-back" href="../../diario.html#diario.views.save_page_count">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">save_page_count</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">page_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page_count&#39;</span><span class="p">))</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span>
+
+        <span class="n">existing_count</span> <span class="o">=</span> <span class="n">PageCount</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">today</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">existing_count</span><span class="p">:</span>
+            <span class="n">existing_count</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="n">page_count</span>
+            <span class="n">existing_count</span><span class="o">.</span><span class="n">is_saved</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">existing_count</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">PageCount</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">page_count</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">today</span><span class="p">,</span> <span class="n">is_saved</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid request&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_today_page_count">
+<a class="viewcode-back" href="../../diario.html#diario.views.get_today_page_count">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">get_today_page_count</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">today_count</span> <span class="o">=</span> <span class="n">PageCount</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">())</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">today_count</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="n">today_count</span><span class="o">.</span><span class="n">count</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No data found&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_event">
+<a class="viewcode-back" href="../../diario.html#diario.views.create_event">[documentos]</a>
+<span class="nd">@require_POST</span>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">create_event</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">titulo</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;titulo&#39;</span><span class="p">)</span>
+    <span class="n">descricao</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;descricao&#39;</span><span class="p">)</span>
+    <span class="n">data_inicio</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data_inicio&#39;</span><span class="p">)</span>
+    <span class="n">data_fim</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data_fim&#39;</span><span class="p">)</span>
+    
+    <span class="n">sao_paulo</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;America/Sao_Paulo&#39;</span><span class="p">)</span>
+
+    <span class="n">data_inicio</span> <span class="o">=</span> <span class="n">parse_datetime</span><span class="p">(</span><span class="n">data_inicio</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">data_inicio</span><span class="p">:</span>
+        <span class="n">data_inicio</span> <span class="o">=</span> <span class="n">sao_paulo</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">data_inicio</span><span class="p">)</span>
+
+    <span class="n">data_fim</span> <span class="o">=</span> <span class="n">parse_datetime</span><span class="p">(</span><span class="n">data_fim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">data_fim</span><span class="p">:</span>
+        <span class="n">data_fim</span> <span class="o">=</span> <span class="n">sao_paulo</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">data_fim</span><span class="p">)</span>
+    
+    <span class="n">Evento</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+        <span class="n">titulo</span><span class="o">=</span><span class="n">titulo</span><span class="p">,</span>
+        <span class="n">descricao</span><span class="o">=</span><span class="n">descricao</span><span class="p">,</span>
+        <span class="n">data_inicio</span><span class="o">=</span><span class="n">data_inicio</span><span class="p">,</span>
+        <span class="n">data_fim</span><span class="o">=</span><span class="n">data_fim</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;calendario&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_events">
+<a class="viewcode-back" href="../../diario.html#diario.views.get_events">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">activate</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;America/Sao_Paulo&#39;</span><span class="p">))</span>
+
+    <span class="n">eventos</span> <span class="o">=</span> <span class="n">Evento</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+
+    <span class="n">eventos_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">evento</span> <span class="ow">in</span> <span class="n">eventos</span><span class="p">:</span>
+        <span class="n">evento_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">evento</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> 
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">evento</span><span class="o">.</span><span class="n">titulo</span><span class="p">,</span>
+            <span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="n">localtime</span><span class="p">(</span><span class="n">evento</span><span class="o">.</span><span class="n">data_inicio</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s1">&#39;end&#39;</span><span class="p">:</span> <span class="n">localtime</span><span class="p">(</span><span class="n">evento</span><span class="o">.</span><span class="n">data_fim</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s1">&#39;notas&#39;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">evento</span><span class="o">.</span><span class="n">notas</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;texto&#39;</span><span class="p">,</span> <span class="s1">&#39;criado_em&#39;</span><span class="p">))</span>
+        <span class="p">}</span>
+        <span class="n">eventos_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">evento_dict</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;eventos&#39;</span><span class="p">:</span> <span class="n">eventos_data</span><span class="p">})</span></div>
+
+
+<span class="n">api_key</span> <span class="o">=</span> <span class="s1">&#39;AIzaSyASEelCOGxux50q-JQIIEoc9fWhxl-0mLE&#39;</span>
+<span class="n">genai</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_recommendations">
+<a class="viewcode-back" href="../../diario.html#diario.views.get_recommendations">[documentos]</a>
+<span class="nd">@csrf_exempt</span>
+<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">&quot;POST&quot;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">get_recommendations</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;No data provided&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+        
+        <span class="n">user_prompt</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;prompt&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user_prompt</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Prompt not provided&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+
+        <span class="n">full_prompt</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Você é um ajudante e deve ser curto e direto, recomende filmes, séries e livros e como eles podem ajudar com o problema&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;para ajudarem a pessoa com o seguinte problema: </span><span class="si">{</span><span class="n">user_prompt</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="n">genai</span><span class="o">.</span><span class="n">GenerativeModel</span><span class="p">(</span><span class="s1">&#39;gemini-pro&#39;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate_content</span><span class="p">(</span><span class="n">full_prompt</span><span class="p">)</span>
+        <span class="n">answer</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>
+
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid JSON&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)},</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="salvar_anotacao">
+<a class="viewcode-back" href="../../diario.html#diario.views.salvar_anotacao">[documentos]</a>
+<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">&quot;POST&quot;</span><span class="p">])</span>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">salvar_anotacao</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+        <span class="n">texto</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;texto&#39;</span><span class="p">]</span>
+        
+        <span class="n">Anotacao</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">usuario</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">texto</span><span class="o">=</span><span class="n">texto</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Anotação salva com sucesso!&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="buscar_anotacoes">
+<a class="viewcode-back" href="../../diario.html#diario.views.buscar_anotacoes">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">buscar_anotacoes</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">anotacoes</span> <span class="o">=</span> <span class="n">Anotacao</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">usuario</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-data_criacao&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">anotacao</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;texto&#39;</span><span class="p">:</span> <span class="n">anotacao</span><span class="o">.</span><span class="n">texto</span><span class="p">,</span> <span class="s1">&#39;data_criacao&#39;</span><span class="p">:</span> <span class="n">anotacao</span><span class="o">.</span><span class="n">data_criacao</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M&#39;</span><span class="p">)}</span> <span class="k">for</span> <span class="n">anotacao</span> <span class="ow">in</span> <span class="n">anotacoes</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  </div>
+
+
+<div class="viewcode-block" id="excluir_anotacao">
+<a class="viewcode-back" href="../../diario.html#diario.views.excluir_anotacao">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">&quot;DELETE&quot;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">excluir_anotacao</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">anotacao_id</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">anotacao</span> <span class="o">=</span> <span class="n">Anotacao</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">anotacao_id</span><span class="p">,</span> <span class="n">usuario</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">anotacao</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Anotação excluída com sucesso!&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Anotacao</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Anotação não encontrada.&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)},</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="buscar_por_conteudo">
+<a class="viewcode-back" href="../../diario.html#diario.views.buscar_por_conteudo">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">buscar_por_conteudo</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;query&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">diario</span> <span class="o">=</span> <span class="n">Diario</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">pagina</span> <span class="o">=</span> <span class="n">diario</span><span class="o">.</span><span class="n">paginas</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">conteudo__icontains</span><span class="o">=</span><span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pagina</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;sucesso&#39;</span><span class="p">,</span> <span class="s1">&#39;numero_pagina&#39;</span><span class="p">:</span> <span class="n">pagina</span><span class="o">.</span><span class="n">numero_pagina</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;falha&#39;</span><span class="p">,</span> <span class="s1">&#39;mensagem&#39;</span><span class="p">:</span> <span class="s1">&#39;Texto não encontrado&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Diario</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;erro&#39;</span><span class="p">,</span> <span class="s1">&#39;mensagem&#39;</span><span class="p">:</span> <span class="s1">&#39;Diário não encontrado&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="salvar_humor">
+<a class="viewcode-back" href="../../diario.html#diario.views.salvar_humor">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">salvar_humor</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
+        <span class="n">mood</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mood&#39;</span><span class="p">)</span>
+        <span class="n">date</span> <span class="o">=</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+        <span class="n">MoodLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mood&#39;</span><span class="p">:</span> <span class="n">mood</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;diario&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">)</span>  </div>
+
+
+<div class="viewcode-block" id="acompanhamento_semanal_view">
+<a class="viewcode-back" href="../../diario.html#diario.views.acompanhamento_semanal_view">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">acompanhamento_semanal_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">nome</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="n">numero_sessao</span> <span class="o">=</span> <span class="n">calcular_numero_sessao</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">AcompanhamentoSemanal</span><span class="p">(</span>
+            <span class="n">nome</span><span class="o">=</span><span class="n">nome</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">numero_sessao</span><span class="o">=</span><span class="n">numero_sessao</span><span class="p">,</span>
+            <span class="n">avaliacao_humor</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;avaliacao_humor&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">mudancas_humor</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mudancas_humor&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">eventos_semana</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;eventos_semana&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">sintomas</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sintomas&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">estrategias_coping</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;estrategias_coping&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">observacoes_terapeuta</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;observacoes_terapeuta&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="n">objetivos_proxima_semana</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;objetivos_proxima_semana&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;acompanhamento&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;erro&#39;</span><span class="p">)</span>
+
+    <span class="n">one_week_ago</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+    <span class="n">moods</span> <span class="o">=</span> <span class="n">MoodLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+        <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> 
+        <span class="n">date__gte</span><span class="o">=</span><span class="n">one_week_ago</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s1">&#39;mood&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span><span class="s1">&#39;mood&#39;</span><span class="p">))</span>
+
+    <span class="n">mood_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">mood</span><span class="p">[</span><span class="s1">&#39;mood&#39;</span><span class="p">]:</span> <span class="n">mood</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">mood</span> <span class="ow">in</span> <span class="n">moods</span><span class="p">}</span>
+
+    <span class="n">all_moods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;feliz&#39;</span><span class="p">,</span> <span class="s1">&#39;triste&#39;</span><span class="p">,</span> <span class="s1">&#39;irritado&#39;</span><span class="p">,</span> <span class="s1">&#39;ansioso&#39;</span><span class="p">,</span> <span class="s1">&#39;entusiasmado&#39;</span><span class="p">,</span> <span class="s1">&#39;cansado&#39;</span><span class="p">,</span> <span class="s1">&#39;estressado&#39;</span><span class="p">,</span> <span class="s1">&#39;indiferente&#39;</span><span class="p">,</span> <span class="s1">&#39;esperancoso&#39;</span><span class="p">,</span> <span class="s1">&#39;inspirado&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">mood</span> <span class="ow">in</span> <span class="n">all_moods</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mood</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mood_data</span><span class="p">:</span>
+            <span class="n">mood_data</span><span class="p">[</span><span class="n">mood</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">mood_data_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">mood_data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;relatorio.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;nome&#39;</span><span class="p">:</span> <span class="n">nome</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;numero_sessao&#39;</span><span class="p">:</span> <span class="n">numero_sessao</span><span class="p">,</span> <span class="s1">&#39;mood_data&#39;</span><span class="p">:</span> <span class="n">mood_data_json</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="calcular_numero_sessao">
+<a class="viewcode-back" href="../../diario.html#diario.views.calcular_numero_sessao">[documentos]</a>
+<span class="k">def</span> <span class="nf">calcular_numero_sessao</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+    <span class="n">ultima_sessao</span> <span class="o">=</span> <span class="n">AcompanhamentoSemanal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">nome</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-numero_sessao&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">ultima_sessao</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ultima_sessao</span><span class="o">.</span><span class="n">numero_sessao</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="analyze_sentiment">
+<a class="viewcode-back" href="../../diario.html#diario.views.analyze_sentiment">[documentos]</a>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span> <span class="nf">analyze_sentiment</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">one_week_ago</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+        <span class="n">moods</span> <span class="o">=</span> <span class="n">MoodLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> 
+            <span class="n">date__gte</span><span class="o">=</span><span class="n">one_week_ago</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s1">&#39;mood&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span><span class="s1">&#39;mood&#39;</span><span class="p">))</span>
+        
+        <span class="n">mood_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">mood</span><span class="p">[</span><span class="s1">&#39;mood&#39;</span><span class="p">]:</span> <span class="n">mood</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">mood</span> <span class="ow">in</span> <span class="n">moods</span><span class="p">}</span>
+        
+        <span class="n">user_input</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mood</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">mood</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">mood_data</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">process_sentiment_analysis</span><span class="p">(</span><span class="n">user_input</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;result&#39;</span><span class="p">:</span> <span class="n">result</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Request must be POST.&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="process_sentiment_analysis">
+<a class="viewcode-back" href="../../diario.html#diario.views.process_sentiment_analysis">[documentos]</a>
+<span class="k">def</span> <span class="nf">process_sentiment_analysis</span><span class="p">(</span><span class="n">user_input</span><span class="p">):</span>
+    <span class="n">full_prompt</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;Você é um ajudante e deve ser ***CURTO E DIRETO e no formato ABNT***, faça a analise geral e profunda dos humores baseado nos seguintes moods com observações: &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot; esses são os moods da pessoa: </span><span class="si">{</span><span class="n">user_input</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">genai</span><span class="o">.</span><span class="n">GenerativeModel</span><span class="p">(</span><span class="s1">&#39;gemini-pro&#39;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate_content</span><span class="p">(</span><span class="n">full_prompt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span></div>
+
+
+<div class="viewcode-block" id="analyze_mood_change">
+<a class="viewcode-back" href="../../diario.html#diario.views.analyze_mood_change">[documentos]</a>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span> <span class="nf">analyze_mood_change</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">one_week_ago</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+        <span class="n">moods</span> <span class="o">=</span> <span class="n">MoodLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">date__gte</span><span class="o">=</span><span class="n">one_week_ago</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;mood&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">moods</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;No mood data available for analysis.&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+
+        <span class="n">user_input</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mood</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mood</span><span class="p">[</span><span class="s1">&#39;mood&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">mood</span> <span class="ow">in</span> <span class="n">moods</span><span class="p">])</span>
+        <span class="n">mood_change_description</span> <span class="o">=</span> <span class="n">analyze_mood_changes_with_ai</span><span class="p">(</span><span class="n">user_input</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;mudancas_humor&#39;</span><span class="p">:</span> <span class="n">mood_change_description</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Request must be POST.&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="analyze_mood_changes_with_ai">
+<a class="viewcode-back" href="../../diario.html#diario.views.analyze_mood_changes_with_ai">[documentos]</a>
+<span class="k">def</span> <span class="nf">analyze_mood_changes_with_ai</span><span class="p">(</span><span class="n">user_input</span><span class="p">):</span>
+    <span class="n">full_prompt</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;Você é um ajudante e deve ser ***CURTO E DIRETO e no formato ABNT***, faça a analise geral e profunda sobre a mudança de humor no decorrer da semana nos seguintes moods com observações: &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot; esses são os moods da pessoa: </span><span class="si">{</span><span class="n">user_input</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">genai</span><span class="o">.</span><span class="n">GenerativeModel</span><span class="p">(</span><span class="s1">&#39;gemini-pro&#39;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate_content</span><span class="p">(</span><span class="n">full_prompt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span></div>
+
+
+<div class="viewcode-block" id="download_pdf_view">
+<a class="viewcode-back" href="../../diario.html#diario.views.download_pdf_view">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">download_pdf_view</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">acompanhamento_id</span><span class="p">):</span>
+    <span class="n">acompanhamento</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">AcompanhamentoSemanal</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">acompanhamento_id</span><span class="p">,</span> <span class="n">nome</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+    
+    <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/pdf&#39;</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;attachment; filename=&quot;acompanhamento_semanal_</span><span class="si">{</span><span class="n">acompanhamento_id</span><span class="si">}</span><span class="s1">.pdf&quot;&#39;</span>
+
+    <span class="n">doc</span> <span class="o">=</span> <span class="n">SimpleDocTemplate</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">pagesize</span><span class="o">=</span><span class="n">letter</span><span class="p">,</span>
+                            <span class="n">rightMargin</span><span class="o">=</span><span class="n">inch</span><span class="p">,</span> <span class="n">leftMargin</span><span class="o">=</span><span class="n">inch</span><span class="p">,</span>
+                            <span class="n">topMargin</span><span class="o">=</span><span class="n">inch</span><span class="p">,</span> <span class="n">bottomMargin</span><span class="o">=</span><span class="n">inch</span><span class="p">)</span>
+
+    <span class="n">styles</span> <span class="o">=</span> <span class="n">getSampleStyleSheet</span><span class="p">()</span>
+    <span class="n">title_style</span> <span class="o">=</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Title&#39;</span><span class="p">]</span>
+    <span class="n">title_style</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">TA_CENTER</span>
+
+    <span class="n">content_style</span> <span class="o">=</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;BodyText&#39;</span><span class="p">]</span>
+    <span class="n">content_style</span><span class="o">.</span><span class="n">spaceAfter</span> <span class="o">=</span> <span class="mi">12</span>
+
+    <span class="n">story</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Acompanhamento Semanal&quot;</span><span class="p">,</span> <span class="n">title_style</span><span class="p">))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Spacer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">inch</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nome: </span><span class="si">{</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">nome</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data: </span><span class="si">{</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Número da Sessão: </span><span class="si">{</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">numero_sessao</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Spacer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">inch</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Avaliação de Humor:&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading2&#39;</span><span class="p">]))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">avaliacao_humor</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Mudanças de Humor:&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading2&#39;</span><span class="p">]))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">mudancas_humor</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Eventos da Semana:&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading2&#39;</span><span class="p">]))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">eventos_semana</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Sintomas:&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading2&#39;</span><span class="p">]))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">sintomas</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Estratégias de Coping:&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading2&#39;</span><span class="p">]))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">estrategias_coping</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Objetivos para a Próxima Semana:&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading2&#39;</span><span class="p">]))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">objetivos_proxima_semana</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;Observações do Terapeuta:&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading2&#39;</span><span class="p">]))</span>
+    <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">acompanhamento</span><span class="o">.</span><span class="n">observacoes_terapeuta</span><span class="p">,</span> <span class="n">content_style</span><span class="p">))</span>
+
+    <span class="n">doc</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">story</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+
+<div class="viewcode-block" id="download_word_view">
+<a class="viewcode-back" href="../../diario.html#diario.views.download_word_view">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">download_word_view</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/vnd.openxmlformats-officedocument.wordprocessingml.document&#39;</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;attachment; filename=&quot;acompanhamento_semanal.docx&quot;&#39;</span>
+
+    <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="p">()</span>
+
+    <span class="n">title</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">add_heading</span><span class="p">(</span><span class="s1">&#39;Acompanhamento Semanal&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">title</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">WD_PARAGRAPH_ALIGNMENT</span><span class="o">.</span><span class="n">CENTER</span>
+
+    <span class="k">def</span> <span class="nf">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">title_text</span><span class="p">,</span> <span class="n">body_text</span><span class="p">):</span>
+        <span class="n">heading</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">add_heading</span><span class="p">(</span><span class="n">title_text</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">paragraph</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">add_paragraph</span><span class="p">(</span><span class="n">body_text</span><span class="p">)</span>
+        <span class="n">paragraph_format</span> <span class="o">=</span> <span class="n">paragraph</span><span class="o">.</span><span class="n">paragraph_format</span>
+        <span class="n">paragraph_format</span><span class="o">.</span><span class="n">space_after</span> <span class="o">=</span> <span class="n">Pt</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">clean_text</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Nome:&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nome&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Data:&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Número da Sessão:&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;numero_sessao&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Avaliação de Humor:&#39;</span><span class="p">,</span> <span class="n">clean_text</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;avaliacao_humor&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Mudanças de Humor:&#39;</span><span class="p">,</span> <span class="n">clean_text</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mudancas_humor&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Eventos da Semana:&#39;</span><span class="p">,</span> <span class="n">clean_text</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;eventos_semana&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Sintomas:&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sintomas&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Estratégias de Coping:&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;estrategias_coping&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Objetivos para a Próxima Semana:&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;objetivos_proxima_semana&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">add_section</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;Observações do Terapeuta:&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;observacoes_terapeuta&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+
+    <span class="n">doc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="consultar_eventos">
+<a class="viewcode-back" href="../../diario.html#diario.views.consultar_eventos">[documentos]</a>
+<span class="nd">@csrf_exempt</span>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">consultar_eventos</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+       
+        <span class="n">hoje</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+        <span class="n">inicio_semana</span> <span class="o">=</span> <span class="n">hoje</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">hoje</span><span class="o">.</span><span class="n">weekday</span><span class="p">())</span>
+        <span class="n">fim_semana</span> <span class="o">=</span> <span class="n">inicio_semana</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+        
+        <span class="n">eventos</span> <span class="o">=</span> <span class="n">Evento</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">data_inicio__gte</span><span class="o">=</span><span class="n">inicio_semana</span><span class="p">,</span> <span class="n">data_fim__lte</span><span class="o">=</span><span class="n">fim_semana</span><span class="p">)</span>
+        <span class="n">eventos_formatados</span> <span class="o">=</span> <span class="p">[</span><span class="n">evento</span><span class="o">.</span><span class="n">titulo</span> <span class="k">for</span> <span class="n">evento</span> <span class="ow">in</span> <span class="n">eventos</span><span class="p">]</span>
+     
+        <span class="n">full_prompt</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Você é um ajudante e deve ser ***CURTO E DIRETO e no formato ABNT***, faça a análise geral dos profunda sobre os eventos ocorridos no decorrer da semana da pessoa: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; esses são os eventos da pessoa: </span><span class="si">{</span><span class="n">eventos_formatados</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        
+        <span class="n">model</span> <span class="o">=</span> <span class="n">genai</span><span class="o">.</span><span class="n">GenerativeModel</span><span class="p">(</span><span class="s1">&#39;gemini-pro&#39;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate_content</span><span class="p">(</span><span class="n">full_prompt</span><span class="p">)</span>
+        <span class="n">analise_ia</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span> 
+        
+
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+            <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;eventos&#39;</span><span class="p">:</span> <span class="n">eventos_formatados</span><span class="p">,</span>
+            <span class="s1">&#39;analise_ia&#39;</span><span class="p">:</span> <span class="n">analise_ia</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid request&#39;</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="list_acompanhamento_semanal">
+<a class="viewcode-back" href="../../diario.html#diario.views.list_acompanhamento_semanal">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">list_acompanhamento_semanal</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">acompanhamentos</span> <span class="o">=</span> <span class="n">AcompanhamentoSemanal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">nome</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+
+    <span class="n">filter_date</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filter_date&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">filter_date</span><span class="p">:</span>
+        <span class="n">acompanhamentos</span> <span class="o">=</span> <span class="n">acompanhamentos</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">filter_date</span><span class="p">)</span>
+
+    <span class="n">last_report</span> <span class="o">=</span> <span class="n">acompanhamentos</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-data&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="n">can_generate_report</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">days_until_next_report</span> <span class="o">=</span> <span class="mi">0</span>  
+
+    <span class="k">if</span> <span class="n">last_report</span> <span class="ow">and</span> <span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="o">-</span> <span class="n">last_report</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="n">can_generate_report</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">days_until_next_report</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">-</span> <span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="o">-</span> <span class="n">last_report</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;list_acompanhamento.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;acompanhamentos&#39;</span><span class="p">:</span> <span class="n">acompanhamentos</span><span class="p">,</span>
+        <span class="s1">&#39;can_generate_report&#39;</span><span class="p">:</span> <span class="n">can_generate_report</span><span class="p">,</span>
+        <span class="s1">&#39;days_until_next_report&#39;</span><span class="p">:</span> <span class="n">days_until_next_report</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="delete_acompanhamento">
+<a class="viewcode-back" href="../../diario.html#diario.views.delete_acompanhamento">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">delete_acompanhamento</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">acompanhamento</span> <span class="o">=</span> <span class="n">AcompanhamentoSemanal</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span>
+        <span class="n">acompanhamento</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="n">messages</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;Acompanhamento deletado com sucesso!&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">AcompanhamentoSemanal</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="n">messages</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;Acompanhamento não encontrado.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;acompanhamento&#39;</span><span class="p">)</span> </div>
+
+
+<div class="viewcode-block" id="add_note">
+<a class="viewcode-back" href="../../diario.html#diario.views.add_note">[documentos]</a>
+<span class="nd">@csrf_exempt</span>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">add_note</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">event_id</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+        <span class="n">evento</span> <span class="o">=</span> <span class="n">Evento</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">event_id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">nova_nota</span> <span class="o">=</span> <span class="n">Nota</span><span class="p">(</span><span class="n">evento</span><span class="o">=</span><span class="n">evento</span><span class="p">,</span> <span class="n">texto</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;texto&#39;</span><span class="p">])</span>
+        <span class="n">nova_nota</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span> <span class="s1">&#39;note_id&#39;</span><span class="p">:</span> <span class="n">nova_nota</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;error&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="delete_note">
+<a class="viewcode-back" href="../../diario.html#diario.views.delete_note">[documentos]</a>
+<span class="nd">@csrf_exempt</span>
+<span class="nd">@require_POST</span>
+<span class="k">def</span> <span class="nf">delete_note</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">note_id</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">nota</span> <span class="o">=</span> <span class="n">Nota</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">note_id</span><span class="p">)</span>
+        <span class="n">nota</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Nota</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;not found&#39;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="view_acompanhamento">
+<a class="viewcode-back" href="../../diario.html#diario.views.view_acompanhamento">[documentos]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">view_acompanhamento</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+    <span class="n">acompanhamento</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">AcompanhamentoSemanal</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span> <span class="n">nome</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+    <span class="n">data_referencia</span> <span class="o">=</span> <span class="n">acompanhamento</span><span class="o">.</span><span class="n">data</span> 
+    <span class="n">data_inicio</span> <span class="o">=</span> <span class="n">data_referencia</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>  
+
+    <span class="n">avaliacoes_humor</span> <span class="o">=</span> <span class="n">MoodLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+        <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+        <span class="n">date__range</span><span class="o">=</span><span class="p">(</span><span class="n">data_inicio</span><span class="p">,</span> <span class="n">data_referencia</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;mood&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">humor_counts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;feliz&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;triste&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;irritado&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;ansioso&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;entusiasmado&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;cansado&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;estressado&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;indiferente&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;esperancoso&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;inspirado&#39;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">avaliacao</span> <span class="ow">in</span> <span class="n">avaliacoes_humor</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">humor</span> <span class="ow">in</span> <span class="n">avaliacao</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">humor</span> <span class="ow">in</span> <span class="n">humor_counts</span><span class="p">:</span>
+                <span class="n">humor_counts</span><span class="p">[</span><span class="n">humor</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">mood_data_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">humor_counts</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">acompanhamento</span><span class="o">.</span><span class="n">sintomas</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sintomas&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">acompanhamento</span><span class="o">.</span><span class="n">estrategias_coping</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;estrategias_coping&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">acompanhamento</span><span class="o">.</span><span class="n">objetivos_proxima_semana</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;objetivos_proxima_semana&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">acompanhamento</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;view_acompanhamento.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;acompanhamento&#39;</span><span class="p">:</span> <span class="n">acompanhamento</span><span class="p">,</span>
+        <span class="s1">&#39;mood_data&#39;</span><span class="p">:</span> <span class="n">mood_data_json</span>
+    <span class="p">})</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Diario</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navegação</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Código do módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Busca rápida</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Ir" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, João Pedro Lacerda Sousa.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
