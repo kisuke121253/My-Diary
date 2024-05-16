@@ -1,0 +1,80 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<body>
+    {% block head_extra %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}" media="screen" />
+    <title>{% block title %}Meu Diário{% endblock %}</title>
+    {% endblock %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="{% url 'diario' %}">
+            MEU DIÁRIO <i class="fa-solid fa-book"></i>
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#"><span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'acompanhamento' %}">Relatório</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'calendario' %}">Calendário</a>
+                </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="#">{{ user.username }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'login' %}">Login</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    {% if user.is_authenticated %}
+    {% if diario and not already_submitted %}
+    <div class="modal-overlay">
+        <div class="mood-selector">
+            <p>Como você está se sentindo hoje?</p>
+            <form action="{% url 'salvar_humor' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" name="mood" value="feliz">😊 Feliz</button>
+                <button type="submit" name="mood" value="triste">😢 Triste</button>
+                <button type="submit" name="mood" value="irritado">😠 Irritado</button>
+                <button type="submit" name="mood" value="ansioso">😟 Ansioso</button>
+                <button type="submit" name="mood" value="entusiasmado">🤩 Entusiasmado</button>
+                <button type="submit" name="mood" value="cansado">😴 Cansado</button>
+                <button type="submit" name="mood" value="estressado">😖 Estressado</button>
+                <button type="submit" name="mood" value="indiferente">😐 Indiferente</button>
+                <button type="submit" name="mood" value="esperancoso">🙏 Esperançoso</button>
+                <button type="submit" name="mood" value="inspirado">🌟 Inspirado</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+
+
+    {% block content %}
+
+
+
+    {% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>

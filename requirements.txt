@@ -1,0 +1,7 @@
+Django>=3.2,<4.0
+whisper
+google-generativeai
+babel
+pytz
+python-docx
+reportlab

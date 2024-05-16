@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_extra %}
+{{ block.super }}
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="{% static 'css/relatorio/relatorio.css' %}" media="screen" />
+<title>Lista de Acompanhamento Semanal</title>
+{% endblock %}
+
+{% block content %}
+<div class="container-relatorio">
+    <h4 class="h4-relatorio">Formulário de Acompanhamento Semanal</h4>
+</div>
+<div class="folha-container-relatorio">
+
+    <form method="post" action="{% url 'view_acompanhamento' acompanhamento.id %}" id="form-acompanhamento">
+        {% csrf_token %}
+        <div class="form-acompanhamento-relatorio">
+            <div class="form-group">
+                <label for="nome">Nome:</label>
+                <input type="text" class="form-control" id="nome" name="nome" value="{{ acompanhamento.nome }}"
+                    readonly>
+            </div>
+            <div class="form-group">
+                <label for="data">Data:</label>
+                <input type="date" class="form-control" id="data" name="data"
+                    value="{{ acompanhamento.data|date:'Y-m-d' }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="numero_sessao">Número da Sessão:</label>
+                <input type="number" class="form-control" id="numero_sessao" name="numero_sessao"
+                    value="{{ acompanhamento.numero_sessao }}" readonly>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="sintomas">Sintomas:</label>
+            <textarea class="form-control" id="sintomas" name="sintomas">{{ acompanhamento.sintomas }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="estrategias_coping">Estratégias de Coping:</label>
+            <textarea class="form-control" id="estrategias_coping"
+                name="estrategias_coping">{{ acompanhamento.estrategias_coping }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="objetivos_proxima_semana">Objetivos para a Próxima Semana:</label>
+            <textarea class="form-control" id="objetivos_proxima_semana"
+                name="objetivos_proxima_semana">{{ acompanhamento.objetivos_proxima_semana }}</textarea>
+        </div>
+
+        <div class="container-grafico">
+            <div id="avaliacao-humor" class="output-div">{{ acompanhamento.avaliacao_humor }}</div>
+            <div class="relatorio-grafico">
+                <canvas id="moodChart" width="400" height="400"></canvas>
+            </div>
+        </div>
+        <div id="mudancas-humor" class="output-div">{{ acompanhamento.mudancas_humor }}</div>
+        <div id="eventos-semana" class="output-div">{{ acompanhamento.eventos_semana }}</div>
+        <div class="form-group">
+            <label for="observacoes_terapeuta">Observações do Terapeuta:</label>
+            <textarea class="form-control" id="observacoes_terapeuta"
+                name="observacoes_terapeuta">{{ acompanhamento.observacoes_terapeuta }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-custom">Salvar Alterações</button>
+    </form>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.getElementById('form-acompanhamento').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var form = event.target;
+        var formData = new FormData(form);
+        var csrfToken = formData.get('csrfmiddlewaretoken');
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        }).then(response => response.json()).then(data => {
+            if (data.success) {
+                alert('Alterações salvas com sucesso!');
+            } else {
+                alert('Ocorreu um erro ao salvar as alterações.');
+            }
+        });
+    });
+
+    var ctx = document.getElementById('moodChart').getContext('2d');
+    var moodData = JSON.parse('{{ mood_data|escapejs }}');
+
+    var moodChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(moodData),
+            datasets: [{
+                label: 'Mood Count',
+                data: Object.values(moodData),
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

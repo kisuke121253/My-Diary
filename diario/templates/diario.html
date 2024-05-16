@@ -1,0 +1,764 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_extra %}
+{{ block.super }}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}" media="screen" />
+<link rel="stylesheet" type="text/css" href="{% static 'css/diario/diario.css' %}" media="screen" />
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+<title>{% block title %}Meu Diário{% endblock %}</title>
+
+{% endblock %}
+</head>
+
+<body>
+    {% block content %}
+    <form id="diaryNameForm" method="post" action="{% url 'salvar_nome_diario' %}">
+        {% csrf_token %}
+        <div class="diaryCapa2">
+            <div class="diaryCapa1">
+                <div class="diaryCapa">
+                    <div class="diaryLabel">
+                        <label for="diaryName">ESCREVA O NOME DO SEU DIÁRIO:</label>
+                    </div>
+                    <div class="diaryButton">
+                        <input type="text" id="diaryName" name="diary_name" required>
+                        <button type="submit">abrir diário</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div id="diaryContent" style="display:none;">
+        <div class="diaryEdit">
+            <a>SEU DIÁRIO:</a>
+            <div>
+                {% for diario in diarios %}
+                <div>
+                    {{ diario.nome }}
+                    <button type="button" class="edit-btn" data-toggle="modal" data-target="#editDiarioModal"
+                        data-diario-id="{{ diario.id }}" data-diario-nome="{{ diario.nome }}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="section-icons-button">
+            <div>
+                <button type="button" class="btn-icon icon-button" data-toggle="modal" data-target="#voiceModal">
+                    <i class="fas fa-microphone"></i><span class="button-text">Adicionar por Voz</span>
+                </button>
+
+                <button type="button" class="btn-icon1 icon-button" data-toggle="modal" data-target="#createEventModal">
+                    <i class="fas fa-calendar-plus"></i><span class="button-text">Criar Novo Evento</span>
+                </button>
+
+                <button type="button" class="btn-icon2 icon-button" data-bs-toggle="modal"
+                    data-bs-target="#problemaModal">
+                    <i class="fas fa-brain"></i><span class="button-text">Descreva seu Problema</span>
+                </button>
+
+                <button type="button" class="btn-icon4 icon-button" data-bs-toggle="modal"
+                    data-bs-target="#modalAnotacao">
+                    <i class="fas fa-pencil-alt"></i><span class="button-text">Adicionar Anotação</span>
+                </button>
+            </div>
+
+            <div class="dailyContainer">
+                <div id="dailyPageCountDisplay">
+                    <h4>PÁGINAS USADAS: <span id="dailyPageCount">0</span></h4>
+                </div>
+
+
+                <div id="searchForm">
+                    <input type="text" id="searchInput" placeholder="Digite uma palavra ou frase">
+                    <button class="btn-search" onclick="searchPage()">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="book_style">
+            <div class="book_style_capa">
+                <div class="book_style_pg1">
+                    <div class="book_style_pg2">
+                        <div id="book">
+
+                        </div>
+                        <button class="nav-button prev" onclick="turnPage(-1)">
+                            <i class="fa-solid fa-angles-left"></i></button>
+                        <button class="nav-button next" onclick="turnPage(1)"><i
+                                class="fa-solid fa-angles-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editDiarioModal" tabindex="-1" role="dialog" aria-labelledby="editDiarioModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDiarioModalLabel">Editar Nome do Diário</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDiarioForm">
+                        <input type="hidden" id="diarioId" name="diario_id">
+                        <div class="form-group">
+                            <label for="diarioNome">Nome do Diário:</label>
+                            <input type="text" class="form-control" id="diarioNome" name="nome_diario">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="createEventModal" tabindex="-1" role="dialog" aria-labelledby="createEventModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createEventModalLabel">Novo Evento</h5>
+                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createEventForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="titulo" class="col-form-label">Título:</label>
+                            <input type="text" class="form-control" id="titulo">
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricao" class="col-form-label">Descrição:</label>
+                            <textarea class="form-control" id="descricao"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="data_inicio" class="col-form-label">Data de Início:</label>
+                            <input type="datetime-local" class="form-control" id="data_inicio">
+                        </div>
+                        <div class="mb-3">
+                            <label for="data_fim" class="col-form-label">Data de Término:</label>
+                            <input type="datetime-local" class="form-control" id="data_fim">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitEventForm()">Salvar Evento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="problemaModal" tabindex="-1" aria-labelledby="modalProblemaLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalProblemaLabel">Qual é o seu problema?</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="problemaInput" class="form-control" rows="3"></textarea>
+                    <div id="respostaProblema" class="mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="enviarProblema()">Enviar</button>
+                </div>
+                <div class="overlay" id="overlay"></div>
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalAnotacao" tabindex="-1" aria-labelledby="modalAnotacaoLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAnotacaoLabel">Suas Anotações</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="textoAnotacao" class="form-control" rows="4"
+                        placeholder="Escreva uma nova anotação aqui..."></textarea>
+                    <hr>
+                    <h6>Anotações Anteriores:</h6>
+                    <ul id="listaAnotacoes" class="list-group">
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarAnotacao()">Salvar Anotação</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="voiceModal" tabindex="-1" role="dialog" aria-labelledby="voiceModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="voiceModalLabel">Adicionar Texto por Voz</h5>
+                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Fale algo e escolha a página onde deseja salvar:</p>
+                    <input type="number" id="voiceInputPage" placeholder="Número da página" class="form-control">
+                    <p id="voiceTextPreview">Fale algo...</p>
+                    <button type="button" class="btn btn-primary" onclick="startVoiceRecognition()">Começar a
+                        Gravar</button>
+                    <button type="button" class="btn btn-warning" id="stopRecordingButton"
+                        onclick="stopVoiceRecognition()" disabled>Parar Gravação</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveVoiceInput()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {% endblock %}
+
+
+    {% block scripts %}
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript">
+        {% if diary_name %}
+        var diaryNameDefined = true;
+        {% else %}
+        var diaryNameDefined = false;
+        {% endif %}
+    </script>
+    <script>
+        function searchPage() {
+            const searchQuery = $('#searchInput').val();
+            $.ajax({
+                url: "{% url 'buscar_por_conteudo' %}",
+                type: 'GET',
+                data: {
+                    'query': searchQuery
+                },
+                success: function (response) {
+                    if (response.status === 'sucesso') {
+                        if (response.numero_pagina % 2 === 0) {
+                            currentPage = response.numero_pagina - 1;
+                        } else {
+                            currentPage = response.numero_pagina;
+                        }
+                        updateBookDisplay();
+                    } else {
+                        alert("Texto não encontrado em nenhuma página.");
+                    }
+                },
+                error: function () {
+                    alert("Erro na busca.");
+                }
+            });
+        }
+    </script>
+    <script>
+        const modal = document.getElementById('modalAnotacao');
+        modal.addEventListener('show.bs.modal', carregarAnotacoes);
+
+        function salvarAnotacao() {
+            const texto = document.getElementById('textoAnotacao').value;
+            fetch("{% url 'salvar_anotacao' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ texto: texto })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert(data.message);
+                        document.getElementById('textoAnotacao').value = '';
+                        carregarAnotacoes();
+                    }
+                })
+                .catch(error => alert('Erro ao salvar a anotação: ' + error));
+        }
+
+
+        function carregarAnotacoes() {
+            fetch("{% url 'buscar_anotacoes' %}")
+                .then(response => response.json())
+                .then(data => {
+                    const lista = document.getElementById('listaAnotacoes');
+                    lista.innerHTML = '';
+                    data.forEach(anotacao => {
+                        const item = document.createElement('li');
+                        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        item.innerHTML = `${anotacao.data_criacao} - ${anotacao.texto} <button class="btn btn-danger btn-sm" onclick="excluirAnotacao(${anotacao.id})">&times;</button>`;
+                        lista.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Erro ao buscar anotações:', error));
+        }
+
+        function excluirAnotacao(anotacaoId) {
+            if (!confirm('Tem certeza que deseja excluir esta anotação?')) {
+                return;
+            }
+            fetch(`/excluir_anotacao/${anotacaoId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    carregarAnotacoes();
+                })
+                .catch(error => alert('Erro ao excluir a anotação: ' + error));
+        }
+
+
+        function getCSRFToken() {
+            let cookieValue = null;
+            const name = 'csrftoken';
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    <script>
+        $('#editDiarioModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget)
+            var diarioId = button.data('diario-id')
+            var diarioNome = button.data('diario-nome')
+            var modal = $(this)
+            modal.find('.modal-title').text('Editar Diário: ' + diarioNome)
+            modal.find('#diarioNome').val(diarioNome)
+            modal.find('#diarioId').val(diarioId)
+        });
+
+        window.onbeforeunload = function () {
+            const pageCount = countUsedPages();
+            if (pageCount > 0) {
+                savePageCount(pageCount);
+            }
+        };
+
+
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        $(document).ready(function () {
+            $('.edit-btn').on('click', function () {
+                var diarioId = $(this).data('diario-id');
+                var diarioNome = $(this).data('diario-nome');
+
+                $('#diarioId').val(diarioId);
+                $('#diarioNome').val(diarioNome);
+
+
+                $('#editDiarioModal').modal('show');
+            });
+
+            $('#editDiarioForm').on('submit', function (e) {
+                e.preventDefault();
+                var diarioId = $('#diarioId').val();
+
+                $.ajax({
+                    url: `/editar-diario/${diarioId}/`,
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        $('#editDiarioModal').modal('hide');
+                        window.location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Erro ao atualizar: ", error);
+                    }
+                });
+            });
+        });
+
+
+    </script>
+    <script>
+        var recognition;
+        var isListening = false;
+
+        function startVoiceRecognition() {
+            var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Seu navegador não suporta reconhecimento de voz. Por favor, use o Google Chrome ou outro navegador compatível.');
+                return;
+            }
+
+            if (!isListening) {
+                recognition = new SpeechRecognition();
+                recognition.interimResults = true;
+                recognition.lang = 'pt-BR';
+                recognition.continuous = true;
+
+                recognition.addEventListener('result', (e) => {
+                    const transcript = Array.from(e.results)
+                        .map(result => result[0])
+                        .map(result => result.transcript)
+                        .join('');
+                    document.getElementById('voiceTextPreview').textContent = transcript;
+                });
+
+                recognition.addEventListener('end', recognition.start);
+                recognition.start();
+                isListening = true;
+                document.getElementById('stopRecordingButton').disabled = false;
+            }
+        }
+
+        function stopVoiceRecognition() {
+            if (isListening && recognition) {
+                recognition.stop();
+                recognition.removeEventListener('end', recognition.start);
+                isListening = false;
+                document.getElementById('stopRecordingButton').disabled = true;
+            }
+        }
+
+        document.getElementById('voiceModal').addEventListener('shown.bs.modal', function () {
+            startVoiceRecognition();
+        });
+
+        document.getElementById('voiceModal').addEventListener('hidden.bs.modal', function () {
+            recognition.stop();
+            recognition.removeEventListener('end', recognition.start);
+        });
+
+
+        function saveVoiceInput() {
+            var pageNumber = document.getElementById('voiceInputPage').value;
+            var text = document.getElementById('voiceTextPreview').textContent;
+            if (!pageNumber || pageNumber < 1) {
+                alert('Por favor, insira um número de página válido.');
+                return;
+            }
+            var textarea = document.getElementById('conteudoPagina' + pageNumber);
+            if (textarea) {
+                textarea.value = text;
+                console.log(text)
+                salvarPaginaDebounce(pageNumber);
+            } else {
+                alert('Página não encontrada.');
+            }
+        }
+
+
+
+        $(document).ready(function () {
+            loadInitialPageCount();
+            buscarEPreencherTodasPaginas();
+            initializeDiary();
+        });
+
+        let currentPage = 1;
+
+        function startDiary() {
+            $('#diaryNameForm').hide();
+            $('#diaryContent').show();
+            initializeBook();
+        }
+
+        function initializeBook() {
+            addNewPages(1);
+            addNewPages(3);
+            updateBookDisplay();
+        }
+
+        function turnPage(direction) {
+            let newPage = currentPage + direction * 2;
+            if (newPage < 1) {
+                console.log("Já está na primeira página.");
+                return;
+            }
+            const totalPages = $("#book .page").length;
+            if (newPage >= totalPages - 1) {
+                addNewPages(totalPages + 1);
+            }
+            currentPage = newPage;
+            updateBookDisplay();
+        }
+
+        function addNewPages(startingPageNumber) {
+            for (let i = 0; i < 2; i++) {
+                const pageNumber = startingPageNumber + i;
+                $('#book').append(`
+            <div class="page" style="display:none;">
+                <textarea id="conteudoPagina${pageNumber}" placeholder="Página ${pageNumber}"></textarea>
+            </div>`);
+
+                $(`#conteudoPagina${pageNumber}`).on('input', debounce(function () {
+                    salvarPaginaDebounce(pageNumber);
+                    updateDailyPageCountDisplay(countUsedPages());
+                }, 1000));
+            }
+        }
+
+        function updateBookDisplay() {
+            $('.page').hide();
+            $('.page:nth-of-type(' + currentPage + '), .page:nth-of-type(' + (currentPage + 1) + ')').show();
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+        function salvarPaginaDebounce(numeroPagina) {
+            var conteudo = document.getElementById('conteudoPagina' + numeroPagina).value;
+            $.ajax({
+                url: "{% url 'salvar_pagina' %}",
+                type: 'POST',
+                data: {
+                    'numero_pagina': numeroPagina,
+                    'conteudo': conteudo,
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                },
+                success: function (response) {
+                    console.log("Conteúdo salvo com sucesso!");
+                    savePageCount(countUsedPages());
+                },
+                error: function () {
+                    console.log("Erro ao salvar o conteúdo.");
+                }
+            });
+        }
+
+        function buscarEPreencherTodasPaginas() {
+            $.ajax({
+                url: "{% url 'buscar_todas_paginas' %}",
+                type: 'GET',
+                success: function (response) {
+                    if (response.status === 'sucesso') {
+                        response.paginas.forEach(function (pagina) {
+                            if ($('#conteudoPagina' + pagina.numero_pagina).length === 0) {
+                                addNewPages(pagina.numero_pagina);
+                            }
+                            $('#conteudoPagina' + pagina.numero_pagina).val(pagina.conteudo);
+                        });
+                        updateDailyPageCountDisplay(countUsedPages());
+                    } else {
+                        alert("Erro ao buscar dados das páginas: " + response.mensagem);
+                    }
+                },
+                error: function () {
+
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            if (typeof diaryNameDefined !== 'undefined' && diaryNameDefined) {
+                startDiary();
+            } else {
+                $('#diaryNameForm').show();
+            }
+        });
+
+        function initializeDiary() {
+            bindPageInputEvents();
+            checkEndOfDay();
+        }
+
+        function bindPageInputEvents() {
+            $('#book').on('input', 'textarea', function () {
+                let pageCount = countUsedPages();
+                updateDailyPageCountDisplay(pageCount);
+            });
+        }
+
+        function countUsedPages() {
+            let pageCount = 0;
+            $('#book .page textarea').each(function () {
+                if ($(this).val().trim() !== '') {
+                    pageCount++;
+                }
+            });
+            return pageCount;
+        }
+
+        function loadInitialPageCount() {
+            $.ajax({
+                url: "{% url 'get_today_page_count' %}",
+                type: 'GET',
+                success: function (response) {
+                    if (response.status === 'success') {
+                        updateDailyPageCountDisplay(response.count);
+                        setTimeout(countAndUpdatePages, 100);
+                    } else {
+                        console.log("Erro ao carregar a contagem de páginas: " + response.message);
+                        updateDailyPageCountDisplay(1);
+                    }
+                },
+                error: function () {
+                    console.log("Erro ao fazer a requisição para obter a contagem de páginas.");
+                    updateDailyPageCountDisplay(0);
+                }
+            });
+        }
+
+        function updateDailyPageCountDisplay(count) {
+            $('#dailyPageCount').text(count);
+        }
+
+        function checkEndOfDay() {
+            const now = new Date();
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            const msUntilEndOfDay = endOfDay - now;
+
+            setTimeout(function () {
+                if (!$('#dailyPageCount').data('saved')) {
+                    const usedPagesToday = countUsedPages();
+                    if (usedPagesToday > 0) {
+                        savePageCount(usedPagesToday);
+                        $('#dailyPageCount').data('saved', true);
+                    }
+                }
+                updateDailyPageCountDisplay(0);
+                checkEndOfDay();
+            }, msUntilEndOfDay);
+        }
+
+        function savePageCount(pageCount) {
+            $.ajax({
+                url: "{% url 'save_page_count' %}",
+                type: 'POST',
+                data: {
+                    'page_count': pageCount,
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                },
+                success: function (response) {
+                    console.log("Contagem de páginas salva com sucesso!");
+                },
+                error: function () {
+                    console.log("Erro ao salvar a contagem de páginas.");
+                }
+            });
+        }
+
+
+
+        function submitEventForm() {
+            var csrfToken = $('[name=csrfmiddlewaretoken]').val();
+            var data = {
+                'csrfmiddlewaretoken': csrfToken,
+                'titulo': $('#titulo').val(),
+                'descricao': $('#descricao').val(),
+                'data_inicio': $('#data_inicio').val(),
+                'data_fim': $('#data_fim').val()
+            };
+
+            $.post('/create_event/', data, function () {
+                $('#createEventModal').modal('hide');
+                location.reload();
+            }).fail(function () {
+                alert('Erro ao criar evento. Por favor, tente novamente.');
+            });
+        }
+
+        function enviarProblema() {
+            const userInput = document.getElementById('problemaInput').value;
+
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('loadingSpinner').style.display = 'block';
+
+            fetch("{% url 'get_recommendations' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ prompt: userInput })
+            }).then(response => response.json())
+                .then(data => {
+                    const respostaDiv = document.getElementById('respostaProblema');
+                    respostaDiv.innerHTML = formatarResposta(data.message);
+
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar recomendações:', error);
+                    const respostaDiv = document.getElementById('respostaProblema');
+                    respostaDiv.innerHTML = `<p>Erro ao processar sua solicitação.</p>`;
+
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                });
+        }
+
+        function formatarResposta(mensagem) {
+            const linhas = mensagem.split('*');
+            const html = linhas.map(linha => {
+                if (linha.trim().length > 0) {
+                    return `<li>${linha.trim()}</li>`;
+                }
+            }).join('');
+            return `<ul>${html}</ul>`;
+        }
+    </script>
+    {% endblock %}
+
+</body>
+
+</html>
