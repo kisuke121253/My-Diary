@@ -87,7 +87,7 @@
 </script>
 <script>
     function downloadAsPDF() {
-        document.getElementById('form-acompanhamento').action = "{% url 'download_pdf' %}";
+        document.getElementById('form-acompanhamento').action = "{% url 'download_pdf_view_criar' %}";
         document.getElementById('form-acompanhamento').submit();
     }
 

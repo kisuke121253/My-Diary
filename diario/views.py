@@ -510,6 +510,56 @@ def download_pdf_view(request, acompanhamento_id):
     doc.build(story)
     return response
 
+@login_required
+def download_pdf_view_criar(request):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="acompanhamento_semanal.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=letter,
+                            rightMargin=inch, leftMargin=inch,
+                            topMargin=inch, bottomMargin=inch)
+
+    styles = getSampleStyleSheet()
+    title_style = styles['Title']
+    title_style.alignment = TA_CENTER
+
+    content_style = styles['BodyText']
+    content_style.spaceAfter = 12
+
+    story = []
+
+    story.append(Paragraph("Acompanhamento Semanal", title_style))
+    story.append(Spacer(1, 0.2 * inch))
+
+    story.append(Paragraph(f"Nome: {request.POST.get('nome', '')}", content_style))
+    story.append(Paragraph(f"Data: {request.POST.get('data', '')}", content_style))
+    story.append(Paragraph(f"Número da Sessão: {request.POST.get('numero_sessao', '')}", content_style))
+
+    story.append(Spacer(1, 0.2 * inch))
+
+    story.append(Paragraph("Avaliação de Humor:", styles['Heading2']))
+    story.append(Paragraph(request.POST.get('avaliacao_humor', ''), content_style))
+
+    story.append(Paragraph("Mudanças de Humor:", styles['Heading2']))
+    story.append(Paragraph(request.POST.get('mudancas_humor', ''), content_style))
+
+    story.append(Paragraph("Eventos da Semana:", styles['Heading2']))
+    story.append(Paragraph(request.POST.get('eventos_semana', ''), content_style))
+
+    story.append(Paragraph("Sintomas:", styles['Heading2']))
+    story.append(Paragraph(request.POST.get('sintomas', ''), content_style))
+
+    story.append(Paragraph("Estratégias de Coping:", styles['Heading2']))
+    story.append(Paragraph(request.POST.get('estrategias_coping', ''), content_style))
+
+    story.append(Paragraph("Objetivos para a Próxima Semana:", styles['Heading2']))
+    story.append(Paragraph(request.POST.get('objetivos_proxima_semana', ''), content_style))
+
+    story.append(Paragraph("Observações do Terapeuta:", styles['Heading2']))
+    story.append(Paragraph(request.POST.get('observacoes_terapeuta', ''), content_style))
+
+    doc.build(story)
+    return response
 
 @login_required
 def download_word_view(request):
